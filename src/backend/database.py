@@ -79,3 +79,4 @@ def create_notification(notification_type:str, notification_data:dict):
     notification_dict = notification.model_dump()
     notification_dict["type"] = notification_type
     collection.insert_one(notification_dict)
+    return {"Message":"Notification added successfully"}
