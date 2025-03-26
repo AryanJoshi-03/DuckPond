@@ -22,39 +22,37 @@ app = FastAPI()
 #     collection.insert_one(notification)
 #     return "Notification added successfully"
 
-class PolicyNotification(BaseModel):
+class BaseNotification(BaseModel):
+    notification_id:int
+    Recipient_id:int
+    Sender_id:int
+    App_type:str
+    is_Read:bool
+    is_Archived:bool
+    date_Created:datetime
+    subject:str
+
+class PolicyNotification(BaseNotification):
     policy_id:int 
-    userId:int  
     subject:str
     body:str
-    is_Read:bool = False
-    is_Archived:bool = False
-    is_Active:bool = True
+
 
 
 class NewsNotification(BaseModel):
-    userId:int
-    is_Read:bool = False
-    created_Date:datetime
     expiration_Date:datetime
     type:str
     title:str
     details:str
-    is_Active:bool = True
 
 
 class ClaimsNotification(BaseModel):
-    userID:int
     insured_Name:str
     claimant_Name:str
     task_Type:str
-    username:str
     due_Date:datetime
     line_Business:str
     description:str
-    priority:int
-    is_Completed:bool = False
-    is_Active:bool = True
 
 
 #Get all notifications
@@ -84,7 +82,6 @@ def create_notification(notification_type:str, notification_data:dict):
         notification = NewsNotification(**notification_data)
 
     notification_dict = notification.model_dump()
-    notification_dict["type"] = notification_type
     collection.insert_one(notification_dict)
     return {"Message":"Notification added successfully"}
 
@@ -101,7 +98,9 @@ def soft_delete_Notif(notification_id:int):
 def update_Notifs(notification_id:int,attribute:str):
     if attribute not in ["is_Read","is_Archived"]:
         raise HTTPException(status_code=400,detail=f"Invalid attribute '{attribute}', must be 'is_Read' or 'is_Archived'.")
-    res = collection.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:True}})
+    notification = collection.find_one({"_id":notification_id,"is_Active":True},{attribute:1})
+    new_val = not notification.get(attribute)
+    res = collection.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
-    
+    return {"Message":f"'{attribute}' toggled to {new_val}"}
