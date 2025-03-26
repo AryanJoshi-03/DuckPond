@@ -94,3 +94,14 @@ def soft_delete_Notif(notification_id:int):
     if res.matched_count == 0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message" :"Notification deleted successfully"}
+
+
+# Work in progress 
+@app.patch("notifications/{notification_id}")
+def update_Notifs(notification_id:int,attribute:str):
+    if attribute not in ["is_Read","is_Archived"]:
+        raise HTTPException(status_code=400,detail=f"Invalid attribute '{attribute}', must be 'is_Read' or 'is_Archived'.")
+    res = collection.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:True}})
+    if res.matched_count ==0:
+        raise HTTPException(status_code=404,detail="Notification not found")
+    
