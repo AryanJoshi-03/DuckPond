@@ -3,6 +3,7 @@ from typing import List
 from pymongo import MongoClient
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 
 load_dotenv()
@@ -14,16 +15,16 @@ collection = db["notifications"]
 
 app = FastAPI()
 
-def insert_notification_test(user_id):
-    notification = { 
-        "user_id": user_id
-    }
-    collection.insert_one(notification)
-    return "Notification added successfully"
+# def insert_notification_test(user_id):
+#     notification = { 
+#         "user_id": user_id
+#     }
+#     collection.insert_one(notification)
+#     return "Notification added successfully"
 
 class PolicyNotification(BaseModel):
-    policy_id:str 
-    userId:str  
+    policy_id:int 
+    userId:int  
     subject:str
     body:str
     is_Read:bool = False
@@ -32,10 +33,10 @@ class PolicyNotification(BaseModel):
 
 
 class NewsNotification(BaseModel):
-    userId:str
+    userId:int
     is_Read:bool = False
-    created_Date:str
-    expiration_Date:str
+    created_Date:datetime
+    expiration_Date:datetime
     type:str
     title:str
     details:str
@@ -43,15 +44,15 @@ class NewsNotification(BaseModel):
 
 
 class ClaimsNotification(BaseModel):
-    userID:str
+    userID:int
     insured_Name:str
     claimant_Name:str
     task_Type:str
     username:str
-    due_Date:str
+    due_Date:datetime
     line_Business:str
     description:str
-    priority:str
+    priority:int
     is_Completed:bool = False
     is_Active:bool = True
 
@@ -63,7 +64,7 @@ def get_all_notifications():
 
 #Get notification depending on user_id **CAN CHANGE**
 @app.get("/notifications/user/{user_id}",response_model=dict)
-def get_notification_user(user_id:str):
+def get_notification_user(user_id:int):
     user_notif = list(collection.find({"user_Id":user_id,"is_Active":True}, {"_id":0}))
     if not user_notif:
         raise HTTPException(status_code=404,detail=f"No notification found for user_id '{user_id}'.")
@@ -87,8 +88,8 @@ def create_notification(notification_type:str, notification_data:dict):
     collection.insert_one(notification_dict)
     return {"Message":"Notification added successfully"}
 
-@app.delete("/notifications/{notification_id}")
-def delete_Notif(notification_id:str):
+@app.patch("/notifications/{notification_id}")
+def soft_delete_Notif(notification_id:int):
     res = collection.update_one({"_id":notification_id}, {"$set":{"is_Active":False}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404,detail="Notification not found")
