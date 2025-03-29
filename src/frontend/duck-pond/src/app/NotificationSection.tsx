@@ -41,11 +41,11 @@ export const NotificationSection: React.FC = () => {
     });
 
     const notifications = [
-        { title: "Notification 1", appName: "App 1", dept: "Dept. 1", time: "Last Hour", flag: "Important", read: "Unread" },
-        { title: "Notification 2", appName: "App 4", dept: "Dept. 2", time: "Last Day", flag: "Urgent", read: "Read" },
-        { title: "Notification 3", appName: "App 3", dept: "Dept. 3", time: "Last Week", flag: "Normal", read: "Unread" },
-        { title: "Notification 4", appName: "App 2", dept: "Dept. 1", time: "Last Hour", flag: "Important", read: "Read" },
-        { title: "Notification 5", appName: "App 5", dept: "Dept. 2", time: "Last Day", flag: "Urgent", read: "Unread" },
+        { title: "Policy Renewal Reminder", appName: "Slack", dept: "Policy", time: "Last Hour", flag: "Important", read: "Unread" },
+        { title: "Claims Status Update", appName: "Duck Creek", dept: "Claims", time: "Last Day", flag: "Important", read: "Read" },
+        { title: "Payment Due Reminder", appName: "Duck Creek", dept: "Payment", time: "Last Week", flag: "Urgent", read: "Unread" },
+        { title: "Team meeting at LGRC @2", appName: "Gmail", dept: "General", time: "Last Hour", flag: "General", read: "Read" },
+        { title: "Professor Anderson posted a note on Piazza", appName: "Gmail", dept: "General", time: "Last Day", flag: "Urgent", read: "Unread" },
     ];
 
     const handleDropdownToggle = (button: string) => {
@@ -62,8 +62,8 @@ export const NotificationSection: React.FC = () => {
     };
 
     const dropdownItems = {
-        "App": ["App 1", "App 2", "App 3", "App 4", "App 5"],
-        "Dept.": ["Dept. 1", "Dept. 2", "Dept. 3"],
+        "App": ["Duck Creek", "Gmail", "Slack", "SMS", "Twitter"],
+        "Dept.": ["Policy", "Claims", "Payment","General"],
         "Time": ["Last Hour", "Last Day", "Last Week"],
         "Flags": ["Important", "Urgent", "Normal"],
         "Read": ["Read", "Unread"],
