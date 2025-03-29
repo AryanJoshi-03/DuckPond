@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from uuid import uuid4
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -16,6 +19,22 @@ db = client["notifications"]
 collection = db["notifications"]
 
 app = FastAPI()
+
+collection.update_many(
+    {"is_Active": {"$exists": False}},
+    {"$set": {"is_Active": True}}
+)
+
+for doc in collection.find():
+    print(doc)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # or ["*"] during dev
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class BaseNotification(BaseModel):
@@ -68,19 +87,29 @@ def get_notification_user(user_id:int):
 #Create a notification depending on type
 @app.post("/notifications/{notification_type}")
 def create_notification(notification_type:str, notification_data:dict):
-    if notification_type not in ["policy", "news","claims"]:
-        raise HTTPException(status_code=400,detail = f"Invalid notification type '{notification_type}. Must be 'policy', 'news', or 'claims'.")
+    base_fields = {
+        "notification_id": uuid4().int >> 96,  # or use your preferred ID logic
+        "Recipient_id": 1,
+        "Sender_id": 0,
+        "App_type": "DuckPond",
+        "date_Created": datetime.utcnow(),
+        "is_Read": False,
+        "is_Archived": False,
+        "is_Active": True,
+        "subject": notification_data.get("title") or notification_data.get("subject") or "Untitled"
+    }
+
     if notification_type == "policy":
-        notification = PolicyNotification(**notification_data)
+        notification = PolicyNotification(**{**base_fields, **notification_data})
     elif notification_type == "claims":
-        notification = ClaimsNotification(**notification_data)
+        notification = ClaimsNotification(**{**base_fields, **notification_data})
     elif notification_type == "news":
-        notification = NewsNotification(**notification_data)
+        notification = NewsNotification(**{**base_fields, **notification_data})
+    else:
+        raise HTTPException(status_code=400, detail="Invalid notification type")
 
-    notification_dict = notification.model_dump()
-
-    collection.insert_one(notification_dict)
-    return {"Message":"Notification added successfully"}
+    collection.insert_one(notification.model_dump())
+    return {"message": "Notification added successfully"}
 
 @app.patch("/notifications/{notification_id}")
 def soft_delete_Notif(notification_id:int):
