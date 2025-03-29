@@ -1,9 +1,11 @@
 import os
 from typing import List
 from pymongo import MongoClient
+
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from datetime import datetime
+
 from fastapi import FastAPI, HTTPException
 
 load_dotenv()
@@ -15,12 +17,6 @@ collection = db["notifications"]
 
 app = FastAPI()
 
-# def insert_notification_test(user_id):
-#     notification = { 
-#         "user_id": user_id
-#     }
-#     collection.insert_one(notification)
-#     return "Notification added successfully"
 
 class BaseNotification(BaseModel):
     notification_id:int
@@ -45,7 +41,6 @@ class NewsNotification(BaseModel):
     title:str
     details:str
 
-
 class ClaimsNotification(BaseModel):
     insured_Name:str
     claimant_Name:str
@@ -53,6 +48,7 @@ class ClaimsNotification(BaseModel):
     due_Date:datetime
     line_Business:str
     description:str
+
 
 
 #Get all notifications
@@ -66,6 +62,7 @@ def get_notification_user(user_id:int):
     user_notif = list(collection.find({"user_Id":user_id,"is_Active":True}, {"_id":0}))
     if not user_notif:
         raise HTTPException(status_code=404,detail=f"No notification found for user_id '{user_id}'.")
+
     return user_notif
 
 #Create a notification depending on type
@@ -73,7 +70,6 @@ def get_notification_user(user_id:int):
 def create_notification(notification_type:str, notification_data:dict):
     if notification_type not in ["policy", "news","claims"]:
         raise HTTPException(status_code=400,detail = f"Invalid notification type '{notification_type}. Must be 'policy', 'news', or 'claims'.")
-
     if notification_type == "policy":
         notification = PolicyNotification(**notification_data)
     elif notification_type == "claims":
@@ -82,6 +78,7 @@ def create_notification(notification_type:str, notification_data:dict):
         notification = NewsNotification(**notification_data)
 
     notification_dict = notification.model_dump()
+
     collection.insert_one(notification_dict)
     return {"Message":"Notification added successfully"}
 
@@ -104,3 +101,4 @@ def update_Notifs(notification_id:int,attribute:str):
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
+
