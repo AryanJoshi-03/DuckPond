@@ -1,10 +1,11 @@
 import os
-from typing import List
+from typing import List, Optional, Union
 from pymongo import MongoClient
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
+from bcrypt import bcrypt
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -12,6 +13,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
 collection = db["notifications"]
+user_collections = db["users"]
 
 app = FastAPI()
 
@@ -22,29 +24,16 @@ app = FastAPI()
 #     collection.insert_one(notification)
 #     return "Notification added successfully"
 
-class BaseNotification(BaseModel):
-    notification_id:int
-    Recipient_id:int
-    Sender_id:int
-    App_type:str
-    is_Read:bool
-    is_Archived:bool
-    date_Created:datetime
-    subject:str
-
-class PolicyNotification(BaseNotification):
+class PolicyNotification(BaseModel):
     policy_id:int 
     subject:str
     body:str
-
-
 
 class NewsNotification(BaseModel):
     expiration_Date:datetime
     type:str
     title:str
     details:str
-
 
 class ClaimsNotification(BaseModel):
     insured_Name:str
@@ -54,6 +43,24 @@ class ClaimsNotification(BaseModel):
     line_Business:str
     description:str
 
+class BaseNotification(BaseModel):
+    notification_id: int
+    recipient_id: int
+    sender_id: int
+    app_type: str
+    is_read: Optional[bool] = None  
+    is_archived: Optional[bool] = None
+    date_created: datetime
+    subject: str
+    details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
+
+class UserCreate(BaseModel):
+    username:str
+    password:str
+
+class UserLogin(BaseModel):
+    username:str
+    password:str
 
 #Get all notifications
 @app.get("/notifications", response_model=List[dict])
@@ -104,3 +111,17 @@ def update_Notifs(notification_id:int,attribute:str):
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
+
+#Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
+@app.post("/register")
+def createUser(user: UserCreate):
+    existed_username = user_collections.find_one({"username":user.username})
+    if existed_username:
+        raise HTTPException(status_code=400,detail="Username already taken.")
+    user_data = {
+        "username":user.username,
+        "password":user.password
+    }
+    user_collections.insert_one(user_data)
+    return{"Message":"User registered successfully."}
+
