@@ -17,13 +17,6 @@ user_collections = db["users"]
 
 app = FastAPI()
 
-# def insert_notification_test(user_id):
-#     notification = { 
-#         "user_id": user_id
-#     }
-#     collection.insert_one(notification)
-#     return "Notification added successfully"
-
 class PolicyNotification(BaseModel):
     policy_id:int 
     subject:str
