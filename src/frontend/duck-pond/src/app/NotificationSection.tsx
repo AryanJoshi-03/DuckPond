@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
+import NotifContent from "./NotifContent";
 
 const Dropdown: React.FC<{
     items: string[];
@@ -30,7 +31,7 @@ const Dropdown: React.FC<{
 };
 
 export const NotificationSection: React.FC = () => {
-    const filterButtons = ["App", "Dept.", "Time", "Flags", "Read"];
+    const filterButtons: Array<keyof typeof dropdownItems> = ["App", "Dept.", "Time", "Flags", "Read"];
     const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
     const [selectedItems, setSelectedItems] = React.useState<{ [key: string]: string[] }>({
         "App": [],
@@ -41,11 +42,11 @@ export const NotificationSection: React.FC = () => {
     });
 
     const notifications = [
-        { title: "Policy Renewal Reminder", appName: "Slack", dept: "Policy", time: "Last Hour", flag: "Important", read: "Unread" },
-        { title: "Claims Status Update", appName: "Duck Creek", dept: "Claims", time: "Last Day", flag: "Important", read: "Read" },
-        { title: "Payment Due Reminder", appName: "Duck Creek", dept: "Payment", time: "Last Week", flag: "Urgent", read: "Unread" },
-        { title: "Team meeting at LGRC @2", appName: "Gmail", dept: "General", time: "Last Hour", flag: "General", read: "Read" },
-        { title: "Professor Anderson posted a note on Piazza", appName: "Gmail", dept: "General", time: "Last Day", flag: "Urgent", read: "Unread" },
+        { title: "Policy Renewal Reminder", appName: "Slack", dept: "Policy", time: "Last Hour", flag: "Important", read: "Unread", message: "Your policy renewal is due in 5 days. Please review and update your information." },
+        { title: "Claims Status Update", appName: "Duck Creek", dept: "Claims", time: "Last Day", flag: "Important", read: "Read", message: "Your claim #12345 has been processed and approved. You can view the details in your dashboard." },
+        { title: "Payment Due Reminder", appName: "Duck Creek", dept: "Payment", time: "Last Week", flag: "Urgent", read: "Unread", message: "Your payment of $500 is due tomorrow. Please ensure sufficient funds are available." },
+        { title: "Team meeting at LGRC @2", appName: "Gmail", dept: "General", time: "Last Hour", flag: "General", read: "Read", message: "Reminder: Team meeting in LGRC room 101 at 2 PM today. Please bring your project updates." },
+        { title: "Professor Anderson posted a note on Piazza", appName: "Gmail", dept: "General", time: "Last Day", flag: "Urgent", read: "Unread", message: "Professor Anderson has posted important updates about the upcoming exam. Please review the course materials." },
     ];
 
     const handleDropdownToggle = (button: string) => {
@@ -61,7 +62,7 @@ export const NotificationSection: React.FC = () => {
         }));
     };
 
-    const dropdownItems = {
+    const dropdownItems: { [key in "App" | "Dept." | "Time" | "Flags" | "Read"]: string[] } = {
         "App": ["Duck Creek", "Gmail", "Slack", "SMS", "Twitter"],
         "Dept.": ["Policy", "Claims", "Payment","General"],
         "Time": ["Last Hour", "Last Day", "Last Week"],
@@ -80,6 +81,38 @@ export const NotificationSection: React.FC = () => {
             );
         });
     };
+
+    const [activeNotification, setActiveNotification] = React.useState<{
+        title: string;
+        appName: string;
+        dept: string;
+        time: string;
+        flag: string;
+        read: string;
+        message: string;
+    } | null>(null);
+
+    function setOpenNotification(notification: { title: string; appName: string; dept: string; time: string; flag: string; read: string; message: string; }): void {
+        setActiveNotification(notification);
+    }
+
+    const handleBack = () => {
+        setActiveNotification(null);
+    };
+
+    if (activeNotification) {
+        return (
+            <section className="flex-1">
+                <NotifContent 
+                    subject={activeNotification.title}
+                    sender={activeNotification.appName}
+                    timeSent={activeNotification.time}
+                    message={activeNotification.message}
+                    onBack={handleBack}
+                />
+            </section>
+        );
+    }
 
     return (
         <section className="flex-1">
@@ -104,12 +137,17 @@ export const NotificationSection: React.FC = () => {
             </div>
             <div className="flex flex-col gap-4">
                 {filterNotifications().map((notification, index) => (
-                    <NotificationCard
+                    <div
                         key={index}
-                        title={notification.title}
-                        appName={notification.appName}
-                        imageUrl="https://cdn.builder.io/api/v1/image/assets/TEMP/e3ce0b7da5c7811b070dc634107c391ec4075045"
-                    />
+                        onClick={() => setOpenNotification(notification)}
+                        className="cursor-pointer"
+                    >
+                        <NotificationCard
+                            title={notification.title}
+                            appName={notification.appName}
+                            imageUrl="https://cdn.builder.io/api/v1/image/assets/TEMP/e3ce0b7da5c7811b070dc634107c391ec4075045"
+                        />
+                    </div>
                 ))}
             </div>
         </section>
