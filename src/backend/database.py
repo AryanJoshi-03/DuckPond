@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional, Union
 from pymongo import MongoClient
 
 from pydantic import BaseModel, Field
@@ -17,6 +17,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
 collection = db["notifications"]
+user_collections = db["users"]
 
 app = FastAPI()
 
@@ -68,6 +69,24 @@ class ClaimsNotification(BaseNotification):
     line_Business:str
     description:str
 
+class BaseNotification(BaseModel):
+    notification_id: int
+    recipient_id: int
+    sender_id: int
+    app_type: str
+    is_read: Optional[bool] = None  
+    is_archived: Optional[bool] = None
+    date_created: datetime
+    subject: str
+    details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
+
+class UserCreate(BaseModel):
+    username:str
+    password:str
+
+class UserLogin(BaseModel):
+    username:str
+    password:str
 
 
 #Get all notifications
