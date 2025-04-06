@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
+import NotificationPopup from "./NotificationPopup";
 
 const Dropdown: React.FC<{
   items: string[];
@@ -41,15 +42,14 @@ export const NotificationSection: React.FC = () => {
     Flags: [],
     Read: [],
   });
-
+  const [selectedNotification, setSelectedNotification] = React.useState<any | null>(null);
   const [notifications, setNotifications] = React.useState<any[]>([]);
-
+  //const [currentView, setCurrentView] = React.useState<"inbox" | "sent">("inbox");
   React.useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const res = await fetch("http://127.0.0.1:8000/notifications");
         const data = await res.json();
-        console.log("Fetched notifications:", data);
         setNotifications(data);
       } catch (err) {
         console.error("Error fetching notifications:", err);
@@ -81,32 +81,53 @@ export const NotificationSection: React.FC = () => {
   };
 
   const mapToDisplayFormat = (notification: any) => {
+    const formatDate = (isoDate: string) => {
+      const date = new Date(isoDate);
+      return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+
+    let common = {
+      appName: "Duck Creek",
+      time: "Last Day",
+      flag: "Important",
+      read: notification.is_Read ? "Read" : "Unread",
+    };
+
     if (notification.title && notification.details) {
       return {
-        title: notification.title,
-        appName: "Duck Creek",
+        sender: "DuckPond Bot",
+        subject: notification.title,
+        preview: notification.details,
+        date: formatDate(notification.date_Created),
+        department: "News",
         dept: "News",
-        time: "Last Day",
-        flag: "Important",
-        read: notification.is_Read ? "Read" : "Unread",
+        isRead: notification.is_Read,
+        ...common,
+        original: notification,
       };
     } else if (notification.subject && notification.body) {
       return {
-        title: notification.subject,
-        appName: "Duck Creek",
+        sender: "DuckPond Bot",
+        subject: notification.subject,
+        preview: notification.body,
+        date: formatDate(notification.date_Created),
+        department: "Policy",
         dept: "Policy",
-        time: "Last Day",
-        flag: "Urgent",
-        read: notification.is_Read ? "Read" : "Unread",
+        isRead: notification.is_Read,
+        ...common,
+        original: notification,
       };
     } else if (notification.claimant_Name) {
       return {
-        title: `${notification.claimant_Name} - ${notification.task_Type}`,
-        appName: "Duck Creek",
+        sender: notification.insured_Name || "Unknown Sender",
+        subject: notification.task_Type,
+        preview: notification.description,
+        date: formatDate(notification.date_Created),
+        department: "Claims",
         dept: "Claims",
-        time: "Last Week",
-        flag: "Important",
-        read: "Unread",
+        isRead: notification.is_Read,
+        ...common,
+        original: notification,
       };
     }
 
@@ -114,19 +135,17 @@ export const NotificationSection: React.FC = () => {
   };
 
   const filteredNotifications = notifications
-  .map(mapToDisplayFormat)
-  .filter((notification) => {
-    if (!notification) return false;
-
-    return (
-      (selectedItems["App"].length === 0 || selectedItems["App"].includes(notification.appName)) &&
-      (selectedItems["Dept."].length === 0 || selectedItems["Dept."].includes(notification.dept)) &&
-      (selectedItems["Time"].length === 0 || selectedItems["Time"].includes(notification.time)) &&
-      (selectedItems["Flags"].length === 0 || selectedItems["Flags"].includes(notification.flag)) &&
-      (selectedItems["Read"].length === 0 || selectedItems["Read"].includes(notification.read))
-    );
-  });
-
+    .map(mapToDisplayFormat)
+    .filter((notification) => {
+      if (!notification) return false;
+      return (
+        (selectedItems["App"].length === 0 || selectedItems["App"].includes(notification.appName)) &&
+        (selectedItems["Dept."].length === 0 || selectedItems["Dept."].includes(notification.dept)) &&
+        (selectedItems["Time"].length === 0 || selectedItems["Time"].includes(notification.time)) &&
+        (selectedItems["Flags"].length === 0 || selectedItems["Flags"].includes(notification.flag)) &&
+        (selectedItems["Read"].length === 0 || selectedItems["Read"].includes(notification.read))
+      );
+    });
 
   return (
     <section className="flex-1">
@@ -157,13 +176,24 @@ export const NotificationSection: React.FC = () => {
           filteredNotifications.map((notification, index) => (
             <NotificationCard
               key={index}
-              title={notification.title}
-              appName={notification.appName}
-              imageUrl="https://cdn.builder.io/api/v1/image/assets/TEMP/e3ce0b7da5c7811b070dc634107c391ec4075045"
+              sender={notification.sender}
+              subject={notification.subject}
+              preview={notification.preview}
+              date={notification.date}
+              department={notification.department}
+              isRead={notification.isRead}
+              onClick={() => setSelectedNotification(notification.original)}
             />
           ))
         )}
       </div>
+
+      {selectedNotification && (
+        <NotificationPopup
+          notification={selectedNotification}
+          onClose={() => setSelectedNotification(null)}
+        />
+      )}
     </section>
   );
 };

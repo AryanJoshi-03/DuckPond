@@ -54,13 +54,13 @@ class PolicyNotification(BaseNotification):
 
 
 
-class NewsNotification(BaseModel):
+class NewsNotification(BaseNotification):
     expiration_Date:datetime
     type:str
     title:str
     details:str
 
-class ClaimsNotification(BaseModel):
+class ClaimsNotification(BaseNotification):
     insured_Name:str
     claimant_Name:str
     task_Type:str
@@ -108,7 +108,7 @@ def create_notification(notification_type: str, notification_data: dict):
     else:
         raise HTTPException(status_code=400, detail="Invalid notification type")
 
-    # ✅ Enforce is_Active = True even if it's missing or overridden
+    # Enforce is_Active = True even if it's missing or overridden
     notification_dict = notification.model_dump()
     notification_dict["is_Active"] = True
 
