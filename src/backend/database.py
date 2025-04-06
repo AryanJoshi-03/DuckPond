@@ -86,9 +86,9 @@ def get_notification_user(user_id:int):
 
 #Create a notification depending on type
 @app.post("/notifications/{notification_type}")
-def create_notification(notification_type:str, notification_data:dict):
+def create_notification(notification_type: str, notification_data: dict):
     base_fields = {
-        "notification_id": uuid4().int >> 96,  # or use your preferred ID logic
+        "notification_id": uuid4().int >> 96,
         "Recipient_id": 1,
         "Sender_id": 0,
         "App_type": "DuckPond",
@@ -108,7 +108,11 @@ def create_notification(notification_type:str, notification_data:dict):
     else:
         raise HTTPException(status_code=400, detail="Invalid notification type")
 
-    collection.insert_one(notification.model_dump())
+    # ✅ Enforce is_Active = True even if it's missing or overridden
+    notification_dict = notification.model_dump()
+    notification_dict["is_Active"] = True
+
+    collection.insert_one(notification_dict)
     return {"message": "Notification added successfully"}
 
 @app.patch("/notifications/{notification_id}")
