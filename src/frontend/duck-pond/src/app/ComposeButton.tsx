@@ -1,3 +1,5 @@
+"use client"; // At the top of the file
+
 import React from "react";
 
 interface ComposeButtonProps {
