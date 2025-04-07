@@ -69,16 +69,16 @@ class ClaimsNotification(BaseNotification):
     line_Business:str
     description:str
 
-class BaseNotification(BaseModel):
-    notification_id: int
-    recipient_id: int
-    sender_id: int
-    app_type: str
-    is_read: Optional[bool] = None  
-    is_archived: Optional[bool] = None
-    date_created: datetime
-    subject: str
-    details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
+# class BaseNotification(BaseModel):
+#     notification_id: int
+#     recipient_id: int
+#     sender_id: int
+#     app_type: str
+#     is_read: Optional[bool] = None  
+#     is_archived: Optional[bool] = None
+#     date_created: datetime
+#     subject: str
+#     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
 
 class UserCreate(BaseModel):
     username:str
@@ -87,7 +87,13 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username:str
     password:str
+class UserCreate(BaseModel):
+    username:str
+    password:str
 
+class UserLogin(BaseModel):
+    username:str
+    password:str
 
 #Get all notifications
 @app.get("/notifications", response_model=List[dict])
@@ -154,3 +160,17 @@ def update_Notifs(notification_id:int,attribute:str):
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
 
+@app.post("/register")
+def createUser(user: UserCreate):
+    existed_username = user_collections.find_one({"username":user.username})
+    if existed_username:
+        raise HTTPException(status_code=400,detail="Username already taken.")
+    password = user.password
+    bytes = password.encode('utf-8')
+    hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
+    user_data = {
+        "username":user.username,
+        "password":hashed_pw
+    }
+    user_collections.insert_one(user_data)
+    return{"Message":"User registered successfully."}
