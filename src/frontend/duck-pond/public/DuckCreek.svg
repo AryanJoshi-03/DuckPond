@@ -1,0 +1,27 @@
+<svg version="1.2" baseProfile="tiny-ps" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1544 1022" width="1544" height="1022">
+	<title>duck-creek-logo-svg</title>
+	<style>
+		tspan { white-space:pre }
+		.shp0 { fill: #ffa360 } 
+		.shp1 { fill: #3b3487 } 
+		.shp2 { fill: #7e6bf4 } 
+		.shp3 { fill: #2dd49c } 
+	</style>
+	<g id="Symbols">
+		<g id="Navigation">
+			<g id="Main-Nav">
+				<g id="Layer">
+					<g id="Logo/Duck-Creek-Technologies-Horizontal">
+						<g id="Layer">
+							<path id="Fill-38" class="shp0" d="M1542.12 383.34L1321.84 255.57L1321.84 511.12L1542.12 383.34Z" />
+							<path id="Fill-39" class="shp1" d="M1101.56 383.34L881.28 511.12L1101.56 638.91L1321.84 511.12L1321.84 255.57L1101.56 383.34Z" />
+							<path id="Fill-40" class="shp2" d="M661 127.78L440.72 255.57L661 383.34L881.28 511.12L881.28 255.57L881.28 0L661 127.78Z" />
+							<path id="Fill-41" class="shp1" d="M661 383.34L440.72 255.57L220.44 127.78L0.16 0L0.16 255.57L0.16 511.12L220.44 638.91L440.72 766.67L661 638.91L881.28 511.12L661 383.34Z" />
+							<path id="Fill-42" class="shp3" d="M440.72 1022.24L662.05 894.27L883.14 766.01L1101.56 638.9L881.28 511.12L661 638.9L440.72 766.67L220.44 638.9L0.16 766.67L219.89 894.27L440.72 1022.24Z" />
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>
