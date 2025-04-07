@@ -68,7 +68,13 @@ class ClaimsNotification(BaseNotification):
     line_Business:str
     description:str
 
+class UserCreate(BaseModel):
+    username:str
+    password:str
 
+class UserLogin(BaseModel):
+    username:str
+    password:str
 
 #Get all notifications
 @app.get("/notifications", response_model=List[dict])
