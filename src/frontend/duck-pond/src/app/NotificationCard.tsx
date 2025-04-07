@@ -3,11 +3,40 @@ import * as React from "react";
 import Image from "next/image";
 
 interface NotificationCardProps {
-  title: string;
-  appName: string;
-  imageUrl: string;
+  sender: string;
+  subject: string;
+  preview: string;
+  date: string;
+  department: string;
+  isRead: boolean;
+  onClick?: () => void; // ✅ Optional click handler
 }
 
+export const NotificationCard: React.FC<NotificationCardProps> = ({
+  sender,
+  subject,
+  preview,
+  date,
+  department,
+  isRead,
+  onClick,
+}) => {
+  return (
+    <div
+      onClick={onClick} //  Makes the whole card clickable
+      className="flex items-center justify-between bg-fuchsia-50 px-4 py-3 rounded-xl border border-stone-300 cursor-pointer hover:bg-fuchsia-100 transition-all"
+    >
+      {/* Left side: text info */}
+      <div className="flex flex-col">
+        <span className="text-sm text-zinc-600">
+          {sender} • {department}
+        </span>
+        <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900`}>
+          {subject}
+        </span>
+        <span className="text-sm text-zinc-500 truncate max-w-[300px]">
+          {preview}
+        </span>
 const getAppLogo = (appName: string) => {
     switch (appName.toLowerCase()) {
         case 'slack':
@@ -92,8 +121,8 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
       </div>
       <div className="flex justify-center items-center w-20 border border-stone-300">
-        <img src={imageUrl} alt="" className="w-[80px] h-[80px] object-contain" />
+        <img src={imageUrl} alt="" className="w-[80px] h-[80px]" />
       </div>
-    </article>
+    </div>
   );
 };
