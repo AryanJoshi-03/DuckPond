@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional, Union
 from pymongo import MongoClient
 
 from pydantic import BaseModel, Field
@@ -7,9 +7,13 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from uuid import uuid4
+
+import bcrypt
+
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -17,6 +21,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
 collection = db["notifications"]
+user_collections = db["users"]
 
 app = FastAPI()
 
@@ -68,6 +73,24 @@ class ClaimsNotification(BaseNotification):
     line_Business:str
     description:str
 
+# class BaseNotification(BaseModel):
+#     notification_id: int
+#     recipient_id: int
+#     sender_id: int
+#     app_type: str
+#     is_read: Optional[bool] = Field(default = False)
+#     is_archived: Optional[bool] = Field(default = False)
+#     date_created: datetime
+#     subject: str
+#     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
+
+class UserCreate(BaseModel):
+    username:str
+    password:str
+
+class UserLogin(BaseModel):
+    username:str
+    password:str
 
 
 #Get all notifications
@@ -134,4 +157,20 @@ def update_Notifs(notification_id:int,attribute:str):
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
+
+# Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
+@app.post("/register")
+def createUser(user: UserCreate):
+    existed_username = user_collections.find_one({"username":user.username})
+    if existed_username:
+        raise HTTPException(status_code=400,detail="Username already taken.")
+    password = user.password
+    bytes = password.encode('utf-8')
+    hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
+    user_data = {
+        "username":user.username,
+        "password":hashed_pw
+    }
+    user_collections.insert_one(user_data)
+    return{"Message":"User registered successfully."}
 
