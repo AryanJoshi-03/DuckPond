@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
-from bcrypt import bcrypt
+import bcrypt
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -41,8 +41,8 @@ class BaseNotification(BaseModel):
     recipient_id: int
     sender_id: int
     app_type: str
-    is_read: Optional[bool] = None  
-    is_archived: Optional[bool] = None
+    is_read: Optional[bool] = Field(default = False)
+    is_archived: Optional[bool] = Field(default = False)
     date_created: datetime
     subject: str
     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
@@ -111,9 +111,12 @@ def createUser(user: UserCreate):
     existed_username = user_collections.find_one({"username":user.username})
     if existed_username:
         raise HTTPException(status_code=400,detail="Username already taken.")
+    password = user.password
+    bytes = password.encode('utf-8')
+    hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
     user_data = {
         "username":user.username,
-        "password":user.password
+        "password":hashed_pw
     }
     user_collections.insert_one(user_data)
     return{"Message":"User registered successfully."}
