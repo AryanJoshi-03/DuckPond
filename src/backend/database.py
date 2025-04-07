@@ -135,3 +135,17 @@ def update_Notifs(notification_id:int,attribute:str):
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
 
+@app.post("/register")
+def createUser(user: UserCreate):
+    existed_username = user_collections.find_one({"username":user.username})
+    if existed_username:
+        raise HTTPException(status_code=400,detail="Username already taken.")
+    password = user.password
+    bytes = password.encode('utf-8')
+    hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
+    user_data = {
+        "username":user.username,
+        "password":hashed_pw
+    }
+    user_collections.insert_one(user_data)
+    return{"Message":"User registered successfully."}
