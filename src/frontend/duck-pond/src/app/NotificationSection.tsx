@@ -1,7 +1,6 @@
 "use client";
 import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
-import NotificationPopup from "./NotificationPopup";
 import NotifContent from "./NotifContent";
 
 const Dropdown: React.FC<{
@@ -149,52 +148,54 @@ export const NotificationSection: React.FC = () => {
     });
 
   return (
-    <section className="flex-1">
-      <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
-        {filterButtons.map((button) => (
-          <div key={button} className="relative">
-            <button
-              onClick={() => handleDropdownToggle(button)}
-              className="px-6 h-10 text-sm font-medium text-white bg-dcpurple rounded-[100px]"
-            >
-              {button}
-            </button>
-            {openDropdown === button && (
-              <Dropdown
-                items={dropdownItems[button as keyof typeof dropdownItems]}
-                selectedItems={selectedItems[button]}
-                onSelect={(item) => handleSelectItem(button, item)}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-4">
-        {filteredNotifications.length === 0 ? (
-          <p className="text-center text-gray-500">No notifications found.</p>
-        ) : (
-          filteredNotifications.map((notification, index) => (
-            <NotificationCard
-              key={index}
-              appName={notification.appName}
-              sender={notification.sender}
-              subject={notification.subject}
-              preview={notification.preview}
-              date={notification.date}
-              department={notification.department}
-              isRead={notification.isRead}
-              onClick={() => setSelectedNotification(notification.original)}
-            />
-          ))
-        )}
-      </div>
-
-      {selectedNotification && (
+    <section className="flex-1 h-full">
+      {selectedNotification ? (
         <NotifContent
           notification={selectedNotification}
           onClose={() => setSelectedNotification(null)}
         />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
+            {filterButtons.map((button) => (
+              <div key={button} className="relative">
+                <button
+                  onClick={() => handleDropdownToggle(button)}
+                  className="px-6 h-10 text-sm font-medium text-white bg-dcpurple rounded-[100px]"
+                >
+                  {button}
+                </button>
+                {openDropdown === button && (
+                  <Dropdown
+                    items={dropdownItems[button as keyof typeof dropdownItems]}
+                    selectedItems={selectedItems[button]}
+                    onSelect={(item) => handleSelectItem(button, item)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {filteredNotifications.length === 0 ? (
+              <p className="text-center text-gray-500">No notifications found.</p>
+            ) : (
+              filteredNotifications.map((notification, index) => (
+                <NotificationCard
+                  key={index}
+                  appName={notification.appName}
+                  sender={notification.sender}
+                  subject={notification.subject}
+                  preview={notification.preview}
+                  date={notification.date}
+                  department={notification.department}
+                  isRead={notification.isRead}
+                  onClick={() => setSelectedNotification(notification.original)}
+                />
+              ))
+            )}
+          </div>
+        </>
       )}
     </section>
   );

@@ -3,6 +3,7 @@ import * as React from "react";
 import Image from "next/image";
 
 interface NotificationCardProps {
+  appName: string;
   sender: string;
   subject: string;
   preview: string;
@@ -12,31 +13,6 @@ interface NotificationCardProps {
   onClick?: () => void; // ✅ Optional click handler
 }
 
-export const NotificationCard: React.FC<NotificationCardProps> = ({
-  sender,
-  subject,
-  preview,
-  date,
-  department,
-  isRead,
-  onClick,
-}) => {
-  return (
-    <div
-      onClick={onClick} //  Makes the whole card clickable
-      className="flex items-center justify-between bg-fuchsia-50 px-4 py-3 rounded-xl border border-stone-300 cursor-pointer hover:bg-fuchsia-100 transition-all"
-    >
-      {/* Left side: text info */}
-      <div className="flex flex-col">
-        <span className="text-sm text-zinc-600">
-          {sender} • {department}
-        </span>
-        <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900`}>
-          {subject}
-        </span>
-        <span className="text-sm text-zinc-500 truncate max-w-[300px]">
-          {preview}
-        </span>
 const getAppLogo = (appName: string) => {
     switch (appName.toLowerCase()) {
         case 'slack':
@@ -105,23 +81,46 @@ const getAppLogo = (appName: string) => {
 };
 
 export const NotificationCard: React.FC<NotificationCardProps> = ({
-  title,
   appName,
-  imageUrl,
+  sender,
+  subject,
+  preview,
+  date,
+  department,
+  isRead,
+  onClick,
 }) => {
   return (
-    <article className="flex w-full h-20 bg-fuchsia-50 rounded-xl border border-stone-300">
-      <div className="flex flex-1 gap-4 items-center p-4">
-        <div className="flex items-center">
+    <div
+      onClick={onClick}
+      className="flex items-center justify-between bg-fuchsia-50 px-4 py-3 rounded-xl border border-stone-300 cursor-pointer hover:bg-fuchsia-100 transition-all"
+    >
+      <div className="flex items-center flex-1">
+        <div className="flex items-center px-2">
           {getAppLogo(appName)}
         </div>
-        <div className="flex-1">
-          <h3 className="text-base text-zinc-900">{title}</h3>
-          <p className="text-sm text-zinc-900">{appName}</p>
+        {/* Left side: text info */}
+        <div className="flex flex-col px-2 flex-1">
+          <span className="text-sm text-zinc-600">
+            {sender} • {department}
+          </span>
+          <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900`}>
+            {subject}
+          </span>
+          <span className="text-sm text-zinc-500 truncate max-w-[300px]">
+            {preview}
+          </span>
         </div>
       </div>
-      <div className="flex justify-center items-center w-20 border border-stone-300">
-        <img src={imageUrl} alt="" className="w-[80px] h-[80px]" />
+
+      {/* Right side: timestamp and logo */}
+      <div className="flex items-center gap-4 ml-4">
+        <span className="text-sm text-zinc-500 whitespace-nowrap">{date}</span>
+        <img
+          src="/DP_Logo_White.png"
+          alt="DuckPond Logo"
+          className="w-10 h-10"
+        />
       </div>
     </div>
   );
