@@ -148,7 +148,7 @@ export const NotificationSection: React.FC = () => {
     });
 
   return (
-    <section className="flex-1 h-full">
+    <section className="flex-1 h-full pt-5">
       {selectedNotification ? (
         <NotifContent
           notification={selectedNotification}
@@ -156,7 +156,7 @@ export const NotificationSection: React.FC = () => {
         />
       ) : (
         <>
-          <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
+          <div className="flex flex-wrap gap-4 mb-6 justify-center relative">
             {filterButtons.map((button) => (
               <div key={button} className="relative">
                 <button
