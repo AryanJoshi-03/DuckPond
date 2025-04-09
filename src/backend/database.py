@@ -11,6 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from uuid import uuid4
 
+from fastapi import Query
+from pymongo import ASCENDING, DESCENDING
+
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 
@@ -155,3 +158,26 @@ def createUser(user: UserCreate):
     }
     user_collections.insert_one(user_data)
     return{"Message":"User registered successfully."}
+
+# Andrew Bell Search bar function help from chat
+# Create a text index on all string fields
+
+@app.get("/notifications/search", response_model=List[dict])
+def fieldwise_search(query: str):
+    # Define the fields to search in
+    fields_to_search = [
+        "subject", "title", "details", "description",
+        "body", "insured_Name", "claimant_Name", "task_Type"
+    ]
+
+    # Create the $or regex query
+    regex_query = {
+        "$or": [
+            {field: {"$regex": query, "$options": "i"}} for field in fields_to_search
+        ],
+        "is_Active": True
+    }
+
+    # Run the query
+    results = list(collection.find(regex_query, {"_id": 0}))
+    return results
