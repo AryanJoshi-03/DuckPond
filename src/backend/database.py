@@ -73,17 +73,6 @@ class ClaimsNotification(BaseNotification):
     line_Business:str
     description:str
 
-# class BaseNotification(BaseModel):
-#     notification_id: int
-#     recipient_id: int
-#     sender_id: int
-#     app_type: str
-#     is_read: Optional[bool] = Field(default = False)
-#     is_archived: Optional[bool] = Field(default = False)
-#     date_created: datetime
-#     subject: str
-#     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]  # Embedded document
-
 class UserCreate(BaseModel):
     username:str
     password:str
@@ -91,7 +80,6 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username:str
     password:str
-
 
 #Get all notifications
 @app.get("/notifications", response_model=List[dict])
