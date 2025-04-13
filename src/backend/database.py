@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Union
 from pymongo import MongoClient
 
 from pydantic import BaseModel, Field
@@ -16,17 +16,17 @@ MONGO_URI = os.getenv("MONGO_URI")
 
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
-collection = db["notifications"]
-
+notifications = db["notifications"]
+userNotifications = db["userNotifications"]
 app = FastAPI()
 
-collection.update_many(
+notifications.update_many(
     {"is_Active": {"$exists": False}},
     {"$set": {"is_Active": True}}
 )
 
-for doc in collection.find():
-    print(doc)
+# for doc in notifications.find():
+#     print(doc)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,30 +37,18 @@ app.add_middleware(
 )
 
 
-class BaseNotification(BaseModel):
-    notification_id:int
-    Recipient_id:int
-    Sender_id:int
-    App_type:str
-    is_Read:bool
-    is_Archived:bool
-    date_Created:datetime
-    subject:str
-
-class PolicyNotification(BaseNotification):
+class PolicyNotification(BaseModel):
     policy_id:int 
-    subject:str
     body:str
 
 
-
-class NewsNotification(BaseNotification):
+class NewsNotification(BaseModel):
     expiration_Date:datetime
     type:str
     title:str
     details:str
 
-class ClaimsNotification(BaseNotification):
+class ClaimsNotification(BaseModel):
     insured_Name:str
     claimant_Name:str
     task_Type:str
@@ -68,6 +56,18 @@ class ClaimsNotification(BaseNotification):
     line_Business:str
     description:str
 
+class BaseNotification(BaseModel):
+    notification_id:int
+    Sender_id:int
+    App_type:str
+    is_Read:bool
+    is_Archived:bool
+    date_Created:datetime
+    subject:str
+    notification_type:str
+    flag:str
+    details: Union[PolicyNotification, NewsNotification, ClaimsNotification]
+    
 class UserCreate(BaseModel):
     username:str
     password:str
@@ -77,40 +77,55 @@ class UserLogin(BaseModel):
     password:str
 
 #Get all notifications
-@app.get("/notifications", response_model=List[dict])
+@app.get("/notifications/", response_model=List[dict])
 def get_all_notifications():
-    return list(collection.find({"is_Active":True}, {"_id": 0}))
+    return list(notifications.find({"is_Active":True}, {"_id": 0}))
 
 #Get notification depending on user_id **CAN CHANGE**
-@app.get("/notifications/user/{user_id}",response_model=dict)
-def get_notification_user(user_id:int):
-    user_notif = list(collection.find({"user_Id":user_id,"is_Active":True}, {"_id":0}))
+@app.get("/notifications/user/{user_id}",response_model=List[dict])
+def get_notification_user(user_id: int):
+    notification_ids_list = [notif["notification_id"] for notif in list(userNotifications.find({"user_id": user_id}, {"_id": 0}))]
+    user_notif = list(notifications.find({"notification_id": {"$in": notification_ids_list}, "is_Active": True}, {"_id": 0}))
     if not user_notif:
-        raise HTTPException(status_code=404,detail=f"No notification found for user_id '{user_id}'.")
-
+        raise HTTPException(status_code=404, detail=f"No notification found for user_id '{user_id}'.")
     return user_notif
 
 #Create a notification depending on type
 @app.post("/notifications/{notification_type}")
 def create_notification(notification_type: str, notification_data: dict):
+    notifID = uuid4().int >> 96
+
     base_fields = {
-        "notification_id": uuid4().int >> 96,
-        "Recipient_id": 1,
+        "notification_id": notifID,
         "Sender_id": 0,
         "App_type": "DuckPond",
-        "date_Created": datetime.utcnow(),
         "is_Read": False,
         "is_Archived": False,
         "is_Active": True,
-        "subject": notification_data.get("title") or notification_data.get("subject") or "Untitled"
+        "date_Created": datetime.now(),
+        "notification_type":notification_type,
+        "subject": notification_data.get("title") or notification_data.get("subject") or "Untitled",
+        "details":{}
     }
 
     if notification_type == "policy":
-        notification = PolicyNotification(**{**base_fields, **notification_data})
+        notification = BaseNotification(**{
+            **base_fields,
+            **notification_data,
+            "details": PolicyNotification(**notification_data["details"])
+        })
     elif notification_type == "claims":
-        notification = ClaimsNotification(**{**base_fields, **notification_data})
+        notification = BaseNotification(**{
+            **base_fields,
+            **notification_data,
+            "details": ClaimsNotification(**notification_data["details"])
+        })
     elif notification_type == "news":
-        notification = NewsNotification(**{**base_fields, **notification_data})
+        notification = BaseNotification(**{
+            **base_fields,
+            **notification_data,
+            "details": NewsNotification(**notification_data["details"])
+        })
     else:
         raise HTTPException(status_code=400, detail="Invalid notification type")
 
@@ -118,12 +133,21 @@ def create_notification(notification_type: str, notification_data: dict):
     notification_dict = notification.model_dump()
     notification_dict["is_Active"] = True
 
-    collection.insert_one(notification_dict)
+    userNotifs = []
+    for userId in notification_data["Recipient_id"]:
+        userNotifs.append(
+        {
+            "notification_id": notifID,
+            "user_id":userId
+        })
+    userNotifications.insert_many(userNotifs)
+
+    notifications.insert_one(notification_dict)
     return {"message": "Notification added successfully"}
 
 @app.patch("/notifications/{notification_id}")
 def soft_delete_Notif(notification_id:int):
-    res = collection.update_one({"_id":notification_id}, {"$set":{"is_Active":False}})
+    res = notifications.update_one({"_id":notification_id}, {"$set":{"is_Active":False}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message" :"Notification deleted successfully"}
@@ -134,16 +158,16 @@ def soft_delete_Notif(notification_id:int):
 def update_Notifs(notification_id:int,attribute:str):
     if attribute not in ["is_Read","is_Archived"]:
         raise HTTPException(status_code=400,detail=f"Invalid attribute '{attribute}', must be 'is_Read' or 'is_Archived'.")
-    notification = collection.find_one({"_id":notification_id,"is_Active":True},{attribute:1})
+    notification = notifications.find_one({"_id":notification_id,"is_Active":True},{attribute:1})
     new_val = not notification.get(attribute)
-    res = collection.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
+    res = notifications.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
 
 @app.post("/register")
 def createUser(user: UserCreate):
-    existed_username = user_collections.find_one({"username":user.username})
+    existed_username = user_collection.find_one({"username":user.username})
     if existed_username:
         raise HTTPException(status_code=400,detail="Username already taken.")
     password = user.password
@@ -153,5 +177,5 @@ def createUser(user: UserCreate):
         "username":user.username,
         "password":hashed_pw
     }
-    user_collections.insert_one(user_data)
+    user_collection.insert_one(user_data)
     return{"Message":"User registered successfully."}
