@@ -7,11 +7,11 @@ interface NotifContentProps {
 
 const NotifContent: React.FC<NotifContentProps> = ({ notification, onClose }) => {
     // Extract data from notification object
-    const subject = notification.title || notification.subject || '';
+    const subject = notification.subject || '';
     const sender = notification.Sender_id === 0 ? "DuckPond Bot" : `User ${notification.Sender_id}`;
     const timeSent = new Date(notification.date_Created).toLocaleDateString();
-    const message = notification.body || notification.details || notification.description || '';
-    const department = notification.department || '';
+    const message = notification.details.body || notification.details.details || notification.details.description || '';
+    const department = notification.notification_type || '';
 
     return (
         <div className="h-full w-full flex flex-col">
