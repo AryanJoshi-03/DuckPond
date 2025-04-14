@@ -20,13 +20,13 @@ MONGO_URI = os.getenv("MONGO_URI")
 
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
-notifications = db["notifications"]
-userNotifications = db["userNotifications"]
+notifications_collection = db["notifications"]
+userNotifications_collection = db["userNotifications"]
 user_collection = db["users"]
 
 app = FastAPI()
 
-notifications.update_many(
+notifications_collection.update_many(
     {"is_Active": {"$exists": False}},
     {"$set": {"is_Active": True}}
 )
@@ -93,13 +93,13 @@ class UserLogin(BaseModel):
 #Get all notifications
 @app.get("/notifications/", response_model=List[dict])
 def get_all_notifications():
-    return list(notifications.find({"is_Active":True}, {"_id": 0}))
+    return list(notifications_collection.find({"is_Active":True}, {"_id": 0}))
 
 #Get notification depending on user_id **CAN CHANGE**
 @app.get("/notifications/user/{user_id}",response_model=List[dict])
 def get_notification_user(user_id: int):
-    notification_ids_list = [notif["notification_id"] for notif in list(userNotifications.find({"user_id": user_id}, {"_id": 0}))]
-    user_notif = list(notifications.find({"notification_id": {"$in": notification_ids_list}, "is_Active": True}, {"_id": 0}))
+    notification_ids_list = [notif["notification_id"] for notif in list(userNotifications_collection.find({"user_id": user_id}, {"_id": 0}))]
+    user_notif = list(notifications_collection.find({"notification_id": {"$in": notification_ids_list}, "is_Active": True}, {"_id": 0}))
     if not user_notif:
         raise HTTPException(status_code=404, detail=f"No notification found for user_id '{user_id}'.")
     return user_notif
@@ -154,14 +154,14 @@ def create_notification(notification_type: str, notification_data: dict):
             "notification_id": notifID,
             "user_id":userId
         })
-    userNotifications.insert_many(userNotifs)
+    userNotifications_collection.insert_many(userNotifs)
 
-    notifications.insert_one(notification_dict)
+    notifications_collection.insert_one(notification_dict)
     return {"message": "Notification added successfully"}
 
 @app.patch("/notifications/{notification_id}")
 def soft_delete_Notif(notification_id:int):
-    res = notifications.update_one({"_id":notification_id}, {"$set":{"is_Active":False}})
+    res = notifications_collection.update_one({"_id":notification_id}, {"$set":{"is_Active":False}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message" :"Notification deleted successfully"}
@@ -172,9 +172,9 @@ def soft_delete_Notif(notification_id:int):
 def update_Notifs(notification_id:int,attribute:str):
     if attribute not in ["is_Read","is_Archived"]:
         raise HTTPException(status_code=400,detail=f"Invalid attribute '{attribute}', must be 'is_Read' or 'is_Archived'.")
-    notification = notifications.find_one({"_id":notification_id,"is_Active":True},{attribute:1})
+    notification = notifications_collection.find_one({"_id":notification_id,"is_Active":True},{attribute:1})
     new_val = not notification.get(attribute)
-    res = notifications.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
+    res = notifications_collection.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
