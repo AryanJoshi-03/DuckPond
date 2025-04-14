@@ -22,6 +22,8 @@ client = MongoClient(MONGO_URI)
 db = client["notifications"]
 notifications = db["notifications"]
 userNotifications = db["userNotifications"]
+user_collection = db["users"]
+
 app = FastAPI()
 
 notifications.update_many(
@@ -73,12 +75,20 @@ class BaseNotification(BaseModel):
     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]
     
 class UserCreate(BaseModel):
+    first_Name:str
+    last_Name:str
+    email:str
+    username:str
+    password:str
+    user_Type:str = Field(default="Employee")
+
+class UserLogin(BaseModel):
+    user_ID:int
+    email:str
     username:str
     password:str
 
-class UserLogin(BaseModel):
-    username:str
-    password:str
+
 
 #Get all notifications
 @app.get("/notifications/", response_model=List[dict])
@@ -170,18 +180,32 @@ def update_Notifs(notification_id:int,attribute:str):
     return {"Message":f"'{attribute}' toggled to {new_val}"}
 
 # Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
-@app.post("/register")
+@app.post("/signup")
 def createUser(user: UserCreate):
-    existed_username = user_collection.find_one({"username":user.username})
+    existed_username = user_collection.find_one({"username":user.username,"email":user.email})
     if existed_username:
         raise HTTPException(status_code=400,detail="Username already taken.")
     password = user.password
     bytes = password.encode('utf-8')
     hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
     user_data = {
+        "first_Name":user.first_Name,
+        "last_Name":user.last_Name,
+        "email":user.email,
         "username":user.username,
-        "password":hashed_pw
+        "password":hashed_pw,
+        "user_Type":"Employee"
     }
     user_collection.insert_one(user_data)
     return{"Message":"User registered successfully."}
 
+@app.post("/login")
+def loginUser(user: UserLogin):
+    user_data = user_collection.find_one({"username":user.username,"email":user.email})
+    if not user_data:
+        raise HTTPException(status_code=400,detail="Invalid username or password.")
+    hashed_pw = user_data["password"]
+    if bcrypt.checkpw(user.password.encode('utf-8'),hashed_pw):
+        return {"Message":"Login successful."}
+    else:
+        raise HTTPException(status_code=400,detail="Invalid username or password.")
