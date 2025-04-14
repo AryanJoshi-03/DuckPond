@@ -84,7 +84,7 @@ def get_all_notifications():
 #Get notification depending on user_id **CAN CHANGE**
 @app.get("/notifications/user/{user_id}",response_model=List[dict])
 def get_notification_user(user_id: int):
-    notification_ids_list = [notif["notification_id"] for notif in list(notifications_collection.find({"user_id": user_id}, {"_id": 0}))]
+    notification_ids_list = [notif["notification_id"] for notif in list(userNotifications_collection.find({"user_id": user_id}, {"_id": 0}))]
     user_notif = list(notifications_collection.find({"notification_id": {"$in": notification_ids_list}, "is_Active": True}, {"_id": 0}))
     if not user_notif:
         raise HTTPException(status_code=404, detail=f"No notification found for user_id '{user_id}'.")
@@ -140,7 +140,7 @@ def create_notification(notification_type: str, notification_data: dict):
             "notification_id": notifID,
             "user_id":userId
         })
-    notifications_collection.insert_many(userNotifs)
+    userNotifications_collection.insert_many(userNotifs)
 
     notifications_collection.insert_one(notification_dict)
     return {"message": "Notification added successfully"}
