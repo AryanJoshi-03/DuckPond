@@ -3,7 +3,7 @@ import * as React from "react";
 
 export const SearchBar: React.FC = () => {
     return (
-        <div className="flex-1 px-6">
+        <div className="flex-1 px-6 pb-3">
             <div className="flex gap-1 items-center mx-auto w-full h-14 bg-gray-200 dark:bg-gray-800 rounded-3xl max-w-2/3">
                 <div className="flex flex-1 gap-1 items-center p-1">
                     <button
