@@ -9,12 +9,12 @@ const Dropdown: React.FC<{
   onSelect: (item: string) => void;
 }> = ({ items, selectedItems, onSelect }) => {
   return (
-    <div className="absolute mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+    <div className="absolute mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
       <div className="py-1">
         {items.map((item) => (
           <label
             key={item}
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
           >
             <input
               type="checkbox"
