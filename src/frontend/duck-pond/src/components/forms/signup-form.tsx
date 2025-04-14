@@ -32,6 +32,8 @@ export function SignupForm() {
   console.log(formState);
   console.log("###########################");
 
+
+  
   return (
     <div className="w-full max-w-md">
       <form action={formAction}>
@@ -43,6 +45,29 @@ export function SignupForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* First Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="firstname">First Name</Label>
+              <Input
+                id="firstname"
+                name="firstname"
+                type="text"
+                placeholder="John"
+              />
+              <ZodErrors error={formState?.zodErrors?.firstname} />
+            </div>
+
+            {/* Last Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="lastname">Last Name</Label>
+              <Input
+                id="lastname"
+                name="lastname"
+                type="text"
+                placeholder="Doe"
+              />
+              <ZodErrors error={formState?.zodErrors?.lastname} />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
