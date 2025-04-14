@@ -14,13 +14,14 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
+
   // === Policy Fields ===
   const [policyId, setPolicyId] = useState("");
 
   // === News Fields ===
   const [expirationDate, setExpirationDate] = useState("");
   const [type, setType] = useState("");
-  const [details, setDetails] = useState("");
+  const [newsdetails, setDetails] = useState("");
 
   // === Claims Fields ===
   const [claimId, setClaimId] = useState("");
@@ -37,47 +38,49 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
 
   // === Submit Form ===
   const handleSubmit = async () => {
-    let notification: any = {};
+    let notification: any = {
+      Recipient_id: [1],
+      Sender_id: 0,
+      App_type: "DuckPond",
+      is_Read: false,
+      is_Archived: false,
+      date_Created: new Date().toISOString(),
+      subject: "",
+      details: {},
+    };
 
     if (notificationType === "policy") {
       notification = {
-        notification_id: 1,
-        Recipient_id: 1,
-        Sender_id: 0,
-        App_type: "DuckPond",
-        date_Created: new Date().toISOString(),
+        ...notification,
         subject: title,
-        body: body,
-        is_Read: false,
-        is_Archived: false,
-        policy_id: parseInt(policyId),
+        details:{
+          policy_id: parseInt(policyId),
+          body: body,
+        }
       };
     } else if (notificationType === "news") {
       notification = {
-        userId: "1",
-        is_Read: false,
-        created_Date: new Date().toISOString(),
-        expiration_Date: new Date(expirationDate).toISOString(),
-        type,
-        title,
-        details,
+        ...notification,
+        subject: title,
+        details:{
+          expiration_Date: new Date(expirationDate).toISOString(),
+          type,
+          title,
+          newsdetails,
+        },
       };
     } else if (notificationType === "claims") {
       notification = {
-        notification_id: 1,
-        Recipient_id: 1,
-        Sender_id: 0,
-        App_type: "DuckPond",
-        date_Created: new Date().toISOString(),
-        is_Read: false,
-        is_Archived: false,
+        ...notification,
         subject: taskType,
-        insured_Name: insuredName,
-        claimant_Name: claimantName,
-        task_Type: taskType,
-        due_Date: new Date(dueDate).toISOString(),
-        line_Business: lineBusiness,
-        description: description,
+        details:{
+          insured_Name: insuredName,
+          claimant_Name: claimantName,
+          task_Type: taskType,
+          due_Date: new Date(dueDate).toISOString(),
+          line_Business: lineBusiness,
+          description: description
+        }
       };
     } else {
       alert("Please select a notification type.");
@@ -179,7 +182,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
                 setType={setType}
                 title={title}
                 setTitle={setTitle}
-                details={details}
+                details={newsdetails}
                 setDetails={setDetails}
               />
             )}
