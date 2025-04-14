@@ -48,7 +48,7 @@ export const NotificationSection: React.FC = () => {
   React.useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/notifications");
+        const res = await fetch("http://127.0.0.1:8000/notifications/user/1");
         const data = await res.json();
         setNotifications(data);
       } catch (err) {
@@ -87,16 +87,19 @@ export const NotificationSection: React.FC = () => {
     };
 
     let common = {
-      appName: "Duck Creek",
+      appName: notification.Apptype,
       time: "Last Day",
       flag: "Important",
       read: notification.is_Read ? "Read" : "Unread",
     };
-
-    if (notification.title && notification.details) {
+    return {
+      ...notification,
+      ...common
+    }
+    if (notification.subject && notification.details) {
       return {
-        sender: "DuckPond Bot",
-        subject: notification.title,
+        sender: notification.Sender_id,
+        subject: notification.subject,
         preview: notification.details,
         date: formatDate(notification.date_Created),
         department: "News",
@@ -183,14 +186,14 @@ export const NotificationSection: React.FC = () => {
               filteredNotifications.map((notification, index) => (
                 <NotificationCard
                   key={index}
-                  appName={notification.appName}
-                  sender={notification.sender}
+                  appName={notification.App_type}
+                  sender={notification.Sender_id}
                   subject={notification.subject}
                   preview={notification.preview}
-                  date={notification.date}
-                  department={notification.department}
+                  date={new Date(notification.date_Created).toLocaleDateString()}
+                  department={notification.notification_type}
                   isRead={notification.isRead}
-                  onClick={() => setSelectedNotification(notification.original)}
+                  onClick={() => setSelectedNotification(notification)}
                 />
               ))
             )}
