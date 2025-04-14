@@ -20,8 +20,8 @@ MONGO_URI = os.getenv("MONGO_URI")
 
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
-notifications = db["notifications"]
-userNotifications = db["userNotifications"]
+notifications_collection = db["notifications"]
+userNotifications_collection = db["userNotifications"]
 user_collection = db["users"]
 
 app = FastAPI()
