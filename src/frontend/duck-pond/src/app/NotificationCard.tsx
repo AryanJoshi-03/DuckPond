@@ -93,7 +93,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className="flex items-center justify-between bg-fuchsia-50 px-4 py-3 rounded-xl border border-stone-300 cursor-pointer hover:bg-fuchsia-100 transition-all"
+      className="flex items-center justify-between bg-fuchsia-50 dark:bg-gray-800 px-4 py-3 rounded-xl border border-stone-300 dark:border-gray-700 cursor-pointer hover:bg-fuchsia-100 dark:hover:bg-gray-700 transition-all"
     >
       <div className="flex items-center flex-1">
         <div className="flex items-center px-2">
@@ -101,13 +101,13 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
         {/* Left side: text info */}
         <div className="flex flex-col px-2 flex-1">
-          <span className="text-sm text-zinc-600">
+          <span className="text-sm text-zinc-600 dark:text-zinc-300">
             {sender} • {department}
           </span>
-          <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900`}>
+          <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900 dark:text-zinc-100`}>
             {subject}
           </span>
-          <span className="text-sm text-zinc-500 truncate max-w-[300px]">
+          <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[300px]">
             {preview}
           </span>
         </div>
@@ -115,7 +115,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
       {/* Right side: timestamp and logo */}
       <div className="flex items-center gap-4 ml-4">
-        <span className="text-sm text-zinc-500 whitespace-nowrap">{date}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{date}</span>
         <img
           src="/DP_Logo_White.png"
           alt="DuckPond Logo"
