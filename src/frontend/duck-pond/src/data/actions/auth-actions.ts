@@ -14,12 +14,10 @@ const schemaRegister = z.object({
 
   firstname: z.string()
     .min(1, { message: "Must be at least 1 character" })
-    .max(50, { message: "Cannot exceed 50 characters" })
-    .optional(),
+    .max(50, { message: "Cannot exceed 50 characters" }),
   lastname: z.string()
     .min(1, { message: "Must be at least 1 character" })
     .max(50, { message: "Cannot exceed 50 characters" })
-    .optional(),
 })
 
 export async function registerUserAction(prevState: any, formData: FormData) {
@@ -43,47 +41,47 @@ export async function registerUserAction(prevState: any, formData: FormData) {
     };
   }
   
-     return {
-      ...prevState,
-      data: "ok",
-      firstname: formData.get("firstname"),
-      lastname: formData.get("lastname"),
-      username: formData.get("username"),
-      password: formData.get("password"),
-      email: formData.get("email"),
-    };
+  // return {
+  //   ...prevState,
+  //   data: "ok",
+  //   firstname: formData.get("firstname"),
+  //   lastname: formData.get("lastname"),
+  //   username: formData.get("username"),
+  //   password: formData.get("password"),
+  //   email: formData.get("email"),
+  // };
 
   // 2. Send to backend
-  // try {
-  //   const response = await fetch("/api/register", {
-  //     method: "POST",
-  //     body: JSON.stringify(validatedFields.data),
-  //   });
+  try {
+    const response = await fetch("http://127.0.0.1:8000/register", {
+      method: "POST",
+      body: JSON.stringify(validatedFields.data),
+    });
 
-  //   if (!response.ok) {
-  //     const error = await response.json();
-  //     return {
-  //       ...prevState,
-  //       data: "bad",
-  //       message: error.message || "Registration failed",
-  //     };
-  //   }
+    if (!response.ok) {
+      const error = await response.json();
+      return {
+        ...prevState,
+        data: "bad",
+        message: error.message || "Registration failed",
+      };
+    }
 
-  //   const user = await response.json();
-  //   return {
-  //     ...prevState,
-  //     data: "ok",
-  //     user,  // Pass backend response to formState
-  //     message: "Registration successful!",
-  //   };
+    //const user = await response.json();
+    return {
+      ...prevState,
+      data: "ok",
+      //user,  // Pass backend response to formState
+      message: "Registration successful!",
+    };
 
-  // } catch (error) {
-  //   return {
-  //     ...prevState,
-  //     data: "bad",
-  //     message: "Network error",
-  //   };
-  // }
+  } catch (error) {
+    return {
+      ...prevState,
+      data: "bad",
+      message: "Network error",
+    };
+  }
 }
 
 
