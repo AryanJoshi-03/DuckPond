@@ -3,6 +3,8 @@ import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
 import NotifContent from "./NotifContent";
 
+import { SearchBar } from "@/app/SearchBar";
+
 const Dropdown: React.FC<{
   items: string[];
   selectedItems: string[];
@@ -31,6 +33,8 @@ const Dropdown: React.FC<{
 };
 
 export const NotificationSection: React.FC = () => {
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+
   const filterButtons = ["App", "Dept.", "Time", "Flags", "Read"] as const;
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
   const [selectedItems, setSelectedItems] = React.useState<{
@@ -137,7 +141,7 @@ export const NotificationSection: React.FC = () => {
     return null;
   };
 
-  const filteredNotifications = notifications
+  let filteredNotifications = notifications
     .map(mapToDisplayFormat)
     .filter((notification): notification is NonNullable<typeof notification> => {
       if (!notification) return false;
@@ -149,6 +153,14 @@ export const NotificationSection: React.FC = () => {
         (selectedItems["Read"].length === 0 || selectedItems["Read"].includes(notification.read))
       );
     });
+
+    // Combine with search results
+    filteredNotifications = searchResults.length > 0
+    ? filteredNotifications.filter(notification => 
+        searchResults.some(result => result.id === notification.id)
+      )
+    : filteredNotifications;
+
 
   return (
     <section className="flex-1 h-full">

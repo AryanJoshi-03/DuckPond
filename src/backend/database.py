@@ -15,6 +15,9 @@ from uuid import uuid4
 import bcrypt
 
 
+from fastapi import Query
+from pymongo import ASCENDING, DESCENDING
+
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 
@@ -182,6 +185,9 @@ def update_Notifs(notification_id:int,attribute:str):
 # Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
 @app.post("/signup")
 def createUser(user: UserCreate):
+    
+    # print(f"Received user data: {user.dict()}")  # Add this line
+
     existed_username = user_collection.find_one({"username":user.username,"email":user.email})
     if existed_username:
         raise HTTPException(status_code=400,detail="Username already taken.")
@@ -209,3 +215,26 @@ def loginUser(user: UserLogin):
         return {"Message":"Login successful."}
     else:
         raise HTTPException(status_code=400,detail="Invalid username or password.")
+
+# Andrew Bell Search bar function help from chat
+# Create a text index on all string fields
+
+@app.get("/notifications/search", response_model=List[dict])
+def fieldwise_search(query: str):
+    # Define the fields to search in
+    fields_to_search = [
+        "subject", "title", "details", "description",
+        "body", "insured_Name", "claimant_Name", "task_Type"
+    ]
+
+    # Create the $or regex query
+    regex_query = {
+        "$or": [
+            {field: {"$regex": query, "$options": "i"}} for field in fields_to_search
+        ],
+        "is_Active": True
+    }
+
+    # Run the query
+    results = list(collection.find(regex_query, {"_id": 0}))
+    return results
