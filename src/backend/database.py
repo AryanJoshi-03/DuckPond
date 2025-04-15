@@ -185,6 +185,9 @@ def update_Notifs(notification_id:int,attribute:str):
 # Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
 @app.post("/signup")
 def createUser(user: UserCreate):
+    
+    # print(f"Received user data: {user.dict()}")  # Add this line
+
     existed_username = user_collection.find_one({"username":user.username,"email":user.email})
     if existed_username:
         raise HTTPException(status_code=400,detail="Username already taken.")
@@ -201,6 +204,17 @@ def createUser(user: UserCreate):
     }
     user_collection.insert_one(user_data)
     return{"Message":"User registered successfully."}
+
+@app.post("/login")
+def loginUser(user: UserLogin):
+    user_data = user_collection.find_one({"username":user.username,"email":user.email})
+    if not user_data:
+        raise HTTPException(status_code=400,detail="Invalid username or password.")
+    hashed_pw = user_data["password"]
+    if bcrypt.checkpw(user.password.encode('utf-8'),hashed_pw):
+        return {"Message":"Login successful."}
+    else:
+        raise HTTPException(status_code=400,detail="Invalid username or password.")
 
 # Andrew Bell Search bar function help from chat
 # Create a text index on all string fields
@@ -224,15 +238,3 @@ def fieldwise_search(query: str):
     # Run the query
     results = list(collection.find(regex_query, {"_id": 0}))
     return results
-
-
-@app.post("/login")
-def loginUser(user: UserLogin):
-    user_data = user_collection.find_one({"username":user.username,"email":user.email})
-    if not user_data:
-        raise HTTPException(status_code=400,detail="Invalid username or password.")
-    hashed_pw = user_data["password"]
-    if bcrypt.checkpw(user.password.encode('utf-8'),hashed_pw):
-        return {"Message":"Login successful."}
-    else:
-        raise HTTPException(status_code=400,detail="Invalid username or password.")

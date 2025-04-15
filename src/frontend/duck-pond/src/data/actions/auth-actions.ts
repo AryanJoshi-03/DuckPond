@@ -12,10 +12,10 @@ const schemaRegister = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"}),
 
-  firstname: z.string()
+  first_Name: z.string()
     .min(1, { message: "Must be at least 1 character" })
     .max(50, { message: "Cannot exceed 50 characters" }),
-  lastname: z.string()
+  last_Name: z.string()
     .min(1, { message: "Must be at least 1 character" })
     .max(50, { message: "Cannot exceed 50 characters" })
 })
@@ -24,8 +24,8 @@ export async function registerUserAction(prevState: any, formData: FormData) {
   console.log("Hello From Register User Action");
 
   const validatedFields = schemaRegister.safeParse({
-    firstname: formData.get("firstname") || undefined, // Convert empty string to undefined
-    lastname: formData.get("lastname") || undefined,
+    first_Name: formData.get("first_Name"),
+    last_Name: formData.get("last_Name"),
     username: formData.get("username"),
     password: formData.get("password"),
     email: formData.get("email"),
@@ -53,8 +53,11 @@ export async function registerUserAction(prevState: any, formData: FormData) {
 
   // 2. Send to backend
   try {
-    const response = await fetch("http://127.0.0.1:8000/register", {
+    const response = await fetch(`http://127.0.0.1:8000/signup`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(validatedFields.data),
     });
 
@@ -67,11 +70,11 @@ export async function registerUserAction(prevState: any, formData: FormData) {
       };
     }
 
-    //const user = await response.json();
+    // const user = await response.json();
     return {
       ...prevState,
       data: "ok",
-      //user,  // Pass backend response to formState
+      // user,  // Pass backend response to formState
       message: "Registration successful!",
     };
 

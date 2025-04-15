@@ -47,26 +47,26 @@ export function SignupForm() {
           <CardContent className="space-y-4">
             {/* First Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="firstname">First Name</Label>
+              <Label htmlFor="first_Name">First Name</Label>
               <Input
-                id="firstname"
-                name="firstname"
+                id="first_Name"
+                name="first_Name"
                 type="text"
                 placeholder="John"
               />
-              <ZodErrors error={formState?.zodErrors?.firstname} />
+              <ZodErrors error={formState?.zodErrors?.first_Name} />
             </div>
 
             {/* Last Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="lastname">Last Name</Label>
+              <Label htmlFor="last_Name">Last Name</Label>
               <Input
-                id="lastname"
-                name="lastname"
+                id="last_Name"
+                name="last_Name"
                 type="text"
                 placeholder="Doe"
               />
-              <ZodErrors error={formState?.zodErrors?.lastname} />
+              <ZodErrors error={formState?.zodErrors?.last_Name} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
