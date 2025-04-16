@@ -1,14 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import PolicyFields from "./PolicyFields";
 import NewsFields from "./NewsFields";
 import ClaimsFields from "./ClaimsFields";
+import UserSelect from "../components/UserSelect";
+
 interface ComposeModalProps {
   onClose: () => void;
 }
 
 const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // After mounting, we can safely show the UI
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // === Notification Type State ===
   const [notificationType, setNotificationType] = useState("");
+
+  // === Selected Users State ===
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   // === Common Fields ===
   const [title, setTitle] = useState("");
@@ -37,17 +51,34 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
 
 
   // === Submit Form ===
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate that at least one recipient is selected
+    if (selectedUsers.length === 0) {
+      alert("Please select at least one recipient");
+      return;
+    }
+    
     let notification: any = {
-      Recipient_id: [1],
-      Sender_id: 0,
-      App_type: "DuckPond",
-      is_Read: false,
-      is_Archived: false,
-      date_Created: new Date().toISOString(),
-      subject: "",
-      details: {},
+      Recipient_id: selectedUsers,
+      flag: "none",
     };
+
+    if (notificationType === "claims") {
+      notification = {
+        ...notification,
+        subject: taskType,
+        details: {
+          insured_Name: insuredName,
+          claimant_Name: claimantName,
+          task_Type: taskType,
+          due_Date: new Date(dueDate).toISOString(),
+          line_Business: lineBusiness,
+          description: description
+        }
+      };
+    }
 
     if (notificationType === "policy") {
       notification = {
@@ -70,10 +101,16 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
         },
       };
     } else if (notificationType === "claims") {
+      // Validate required fields
+      if (!insuredName || !claimantName || !taskType || !dueDate || !lineBusiness || !description) {
+        alert("Please fill in all required fields for the claims notification.");
+        return;
+      }
+
       notification = {
         ...notification,
         subject: taskType,
-        details:{
+        details: {
           insured_Name: insuredName,
           claimant_Name: claimantName,
           task_Type: taskType,
@@ -88,6 +125,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
     }
 
     try {
+      console.log("Sending notification:", notification);
       const response = await fetch(`http://127.0.0.1:8000/notifications/${notificationType}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,7 +133,9 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
       });
 
       if (response.ok) {
-        console.log("Notification posted!");
+        const result = await response.json();
+        console.log("Notification posted successfully:", result);
+        alert(`Notification sent successfully to ${selectedUsers.length} recipient(s)!`);
         onClose();
         // 🔄 Reset Fields
         setTitle(""); 
@@ -113,12 +153,15 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
         setLineBusiness("");
         setDescription("");
         setNotificationType("");
+        setSelectedUsers([]);
       } else {
-        const err = await response.text();
-        console.error("Failed to send notification:", err);
+        const errorData = await response.json();
+        console.error("Failed to send notification:", errorData);
+        alert(`Failed to send notification: ${errorData.detail || "Unknown error"}`);
       }
     } catch (err) {
       console.error("Error during fetch:", err);
+      alert("An error occurred while sending the notification. Please try again.");
     }
   };
 
@@ -132,7 +175,11 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
 
         {/* Header */}
         <div className="flex items-center mb-4">
-          <img src="/DP_Logo_White.png" alt="Logo" className="h-6" />
+          <img 
+            src={mounted && theme === "light" ? "/DP_Logo_Black.png" : "/DP_Logo_White.png"} 
+            alt="Logo" 
+            className="h-6" 
+          />
           <h2 className="ml-2 text-2xl font-semibold text-black">Compose Notification</h2>
         </div>
 
@@ -148,18 +195,24 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
           <option value="claims">Claims</option>
         </select>
 
+        {/* User Selection */}
+        <UserSelect
+          selectedUsers={selectedUsers}
+          onUserSelect={setSelectedUsers}
+        />
+
         {/* Conditional Fields */}
 
         {notificationType === "" ? (
           // Placeholder content when no type is selected
           <div className="flex flex-col items-center justify-center flex-1 text-center text-gray-500 gap-2">
              <img
-              src="/DP_Logo_White.png" 
+              src={mounted && theme === "light" ? "/DP_Logo_Black.png" : "/DP_Logo_White.png"} 
               alt="DuckPond Logo"
               className="w-32 h-32 opacity-100"
             />
             <p className="text-lg font-medium">Select a notification type to begin composing.</p>
-            <p className="text-sm text-gray-400">You’ll be able to customize the message after choosing a type.</p>
+            <p className="text-sm text-gray-400">You'll be able to customize the message after choosing a type.</p>
           </div>
         ) : (
           <>
