@@ -13,6 +13,11 @@ interface ClaimsFieldsProps {
   setLineBusiness: (val: string) => void;
   description: string;
   setDescription: (val: string) => void;
+  onBlurTaskType?: () => void; // Added
+  onBlurDueDate?: () => void; // Added
+  onBlurInsuredName?: () => void; // Added
+  onBlurClaimantName?: () => void; // Added
+  onBlurDescription?: () => void; // Added
 }
 
 const ClaimsFields: React.FC<ClaimsFieldsProps> = ({
@@ -28,6 +33,11 @@ const ClaimsFields: React.FC<ClaimsFieldsProps> = ({
   setLineBusiness,
   description,
   setDescription,
+  onBlurTaskType,
+  onBlurDueDate,
+  onBlurInsuredName,
+  onBlurClaimantName,
+  onBlurDescription,
 }) => {
   return (
     <div className="flex flex-col gap-4 flex-1">
@@ -36,6 +46,7 @@ const ClaimsFields: React.FC<ClaimsFieldsProps> = ({
         placeholder="Insured Name"
         value={insuredName}
         onChange={(e) => setInsuredName(e.target.value)}
+        onBlur={onBlurInsuredName} // Added
         className="p-2 rounded border border-gray-300 text-black"
       />
       <input
@@ -43,6 +54,7 @@ const ClaimsFields: React.FC<ClaimsFieldsProps> = ({
         placeholder="Claimant Name"
         value={claimantName}
         onChange={(e) => setClaimantName(e.target.value)}
+        onBlur={onBlurClaimantName} // Added
         className="p-2 rounded border border-gray-300 text-black"
       />
       <input
@@ -50,12 +62,14 @@ const ClaimsFields: React.FC<ClaimsFieldsProps> = ({
         placeholder="Task Type"
         value={taskType}
         onChange={(e) => setTaskType(e.target.value)}
+        onBlur={onBlurTaskType} // Existing
         className="p-2 rounded border border-gray-300 text-black"
       />
       <input
         type="date"
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
+        onBlur={onBlurDueDate} // Added
         className="p-2 rounded border border-gray-300 text-black"
       />
       <input
@@ -69,6 +83,7 @@ const ClaimsFields: React.FC<ClaimsFieldsProps> = ({
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+        onBlur={onBlurDescription} // Added
         className="p-2 rounded border border-gray-300 text-black resize-none flex-1"
       />
     </div>
