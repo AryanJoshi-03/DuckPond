@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from uuid import uuid4
@@ -23,11 +24,13 @@ MONGO_URI = os.getenv("MONGO_URI")
 
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
-notifications = db["notifications"]
-userNotifications = db["userNotifications"]
+notifications_collection = db["notifications"]
+userNotifications_collection = db["userNotifications"]
+user_collection = db["users"]
+
 app = FastAPI()
 
-notifications.update_many(
+notifications_collection.update_many(
     {"is_Active": {"$exists": False}},
     {"$set": {"is_Active": True}}
 )
@@ -76,17 +79,25 @@ class BaseNotification(BaseModel):
     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]
     
 class UserCreate(BaseModel):
+    first_Name:str
+    last_Name:str
+    email:str
+    username:str
+    password:str
+    user_Type:str = Field(default="Employee")
+
+class UserLogin(BaseModel):
+    user_ID:int
+    email:str
     username:str
     password:str
 
-class UserLogin(BaseModel):
-    username:str
-    password:str
+
 
 #Get all notifications
 @app.get("/notifications/", response_model=List[dict])
 def get_all_notifications():
-    return list(notifications.find({"is_Active":True}, {"_id": 0}))
+    return list(notifications_collection.find({"is_Active":True}, {"_id": 0}))
 
 #Get notification depending on user_id **CAN CHANGE**
 @app.get("/notifications/user/{user_id}",response_model=List[dict])
@@ -260,17 +271,25 @@ def update_Notifs(notification_id:int,attribute:str):
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
 
-@app.post("/register")
+# Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
+@app.post("/signup")
 def createUser(user: UserCreate):
-    existed_username = user_collection.find_one({"username":user.username})
+    
+    # print(f"Received user data: {user.dict()}")  # Add this line
+
+    existed_username = user_collection.find_one({"username":user.username,"email":user.email})
     if existed_username:
         raise HTTPException(status_code=400,detail="Username already taken.")
     password = user.password
     bytes = password.encode('utf-8')
     hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
     user_data = {
+        "first_Name":user.first_Name,
+        "last_Name":user.last_Name,
+        "email":user.email,
         "username":user.username,
-        "password":hashed_pw
+        "password":hashed_pw,
+        "user_Type":"Employee"
     }
     user_collection.insert_one(user_data)
     return{"Message":"User registered successfully."}

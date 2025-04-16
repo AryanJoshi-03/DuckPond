@@ -3,6 +3,8 @@ import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
 import NotifContent from "./NotifContent";
 
+import { SearchBar } from "@/app/SearchBar";
+
 const Dropdown: React.FC<{
   items: string[];
   selectedItems: string[];
@@ -14,7 +16,7 @@ const Dropdown: React.FC<{
         {items.map((item) => (
           <label
             key={item}
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
           >
             <input
               type="checkbox"
@@ -160,7 +162,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     };
 
     let common = {
-      appName: notification.App_type || "DuckPond",
+      appName: (notification.App_type || "DuckPond").toLowerCase(),
       time: "Last Day",
       flag: "Important",
       read: notification.is_Read ? "Read" : "Unread",
@@ -174,8 +176,8 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       subject: notification.subject || "No Subject",
       preview: "",
       date: formatDate(notification.date_Created),
-      department: notification.notification_type || "General",
-      dept: notification.notification_type || "General",
+      department: (notification.notification_type || "General").toLowerCase(),
+      dept: (notification.notification_type || "General").toLowerCase(),
       isRead: notification.is_Read || false,
       recipients: notification.sent_to || [],
     };
@@ -199,40 +201,31 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     return formattedNotification;
   };
 
-  const filteredNotifications = notifications
+  let filteredNotifications = notifications
     .map(mapToDisplayFormat)
     .filter((notification): notification is NonNullable<typeof notification> => {
       if (!notification) return false;
-      
-      // Helper function to check if a value matches any selected items (case-insensitive)
-      const matchesSelectedItems = (value: string, selectedItems: string[]) => {
-        if (selectedItems.length === 0) return true;
-        return selectedItems.some(item => 
-          value.toLowerCase().includes(item.toLowerCase())
-        );
-      };
-
       return (
-        matchesSelectedItems(notification.appName, selectedItems["App"]) &&
-        matchesSelectedItems(notification.dept, selectedItems["Dept."]) &&
-        matchesSelectedItems(notification.time, selectedItems["Time"]) &&
-        matchesSelectedItems(notification.flag, selectedItems["Flags"]) &&
-        matchesSelectedItems(notification.read, selectedItems["Read"])
+        (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
+        (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
+        (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => item.toLowerCase() === notification.time.toLowerCase())) &&
+        (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
+        (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()))
       );
     });
 
     // Combine with search results
     filteredNotifications = searchResults.length > 0
-      ? filteredNotifications.filter(notification => 
-          searchResults.some(result => result.id === notification.id)
-        )
-      : filteredNotifications;
+    ? filteredNotifications.filter(notification => 
+        searchResults.some(result => result.id === notification.id)
+      )
+    : filteredNotifications;
 
   console.log("Current view:", view);
   console.log("Filtered notifications:", filteredNotifications);
 
   return (
-    <section className="flex-1 h-full pt-5">
+    <section className="flex-1 h-full">
       {selectedNotification ? (
         <NotifContent
           notification={selectedNotification}

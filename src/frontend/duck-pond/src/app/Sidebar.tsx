@@ -29,7 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
 
   return (
     <>
-      <aside className="flex flex-col gap-4 max-md:w-full justify-center items-center">
+      <aside className="flex flex-col gap-4 max-md:w-full justify-center items-center transition-colors duration-300 ease-in-out">
         <Image
           src={mounted && theme === "light" ? "/DP_Logo_Black.png" : "/DP_Logo_White.png"}
           alt="Duck Pond Logo"
@@ -37,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           height={100}
         />
         <ComposeButton onClick={() => setShowModal(true)} />
-        <button className="h-10 text-sm font-medium text-white cursor-pointer bg-slate-500 rounded-[100px] w-[137px]">
+        <button className="h-10 text-sm font-medium text-white cursor-pointer bg-slate-500 dark:bg-slate-700 rounded-[100px] w-[137px] transition-colors duration-300 ease-in-out">
           Configure Apps
         </button>
 
