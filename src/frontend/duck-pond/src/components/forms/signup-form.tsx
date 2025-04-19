@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useActionState } from "react";
+import { registerUserAction } from "@/data/actions/auth-actions";
 
 import {
   CardTitle,
@@ -14,10 +16,27 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
+import { ZodErrors } from "@/components/custom/zod-errors";
+
+const INITIAL_STATE = {
+  data: null,
+};
+
 export function SignupForm() {
+  const [formState, formAction] = useActionState(
+    registerUserAction,
+    INITIAL_STATE
+  );
+
+  console.log("## will render on client ##");
+  console.log(formState);
+  console.log("###########################");
+
+
+  
   return (
     <div className="w-full max-w-md">
-      <form>
+      <form action={formAction}>
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-3xl font-bold">Sign Up</CardTitle>
@@ -26,6 +45,29 @@ export function SignupForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* First Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="first_Name">First Name</Label>
+              <Input
+                id="first_Name"
+                name="first_Name"
+                type="text"
+                placeholder="John"
+              />
+              <ZodErrors error={formState?.zodErrors?.first_Name} />
+            </div>
+
+            {/* Last Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="last_Name">Last Name</Label>
+              <Input
+                id="last_Name"
+                name="last_Name"
+                type="text"
+                placeholder="Doe"
+              />
+              <ZodErrors error={formState?.zodErrors?.last_Name} />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -34,6 +76,7 @@ export function SignupForm() {
                 type="text"
                 placeholder="username"
               />
+              <ZodErrors error={formState?.zodErrors?.username} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -43,6 +86,7 @@ export function SignupForm() {
                 type="email"
                 placeholder="name@example.com"
               />
+              <ZodErrors error={formState?.zodErrors?.email} />
             </div>
 
             <div className="space-y-2">
@@ -53,6 +97,7 @@ export function SignupForm() {
                 type="password"
                 placeholder="password"
               />
+              <ZodErrors error={formState?.zodErrors?.password} />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
@@ -61,7 +106,7 @@ export function SignupForm() {
         </Card>
         <div className="mt-4 text-center text-sm">
           Have an account?
-          <Link className="underline ml-2" href="/signin">
+          <Link className="underline ml-2" href="signin">
             Sign In
           </Link>
         </div>

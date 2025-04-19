@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
 
   return (
     <>
-      <aside className="flex flex-col gap-4 max-md:w-full justify-center items-center">
+      <aside className="flex flex-col gap-4 max-md:w-full justify-center items-center transition-colors duration-300 ease-in-out">
         <Image
           src="/DP_Logo_White.png"
           alt="Duck Pond Logo"
@@ -29,27 +29,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           height={100}
         />
         <ComposeButton onClick={() => setShowModal(true)} />
-        <button className="h-10 text-sm font-medium text-white cursor-pointer bg-slate-500 rounded-[100px] w-[137px]">
+        <button className="h-10 text-sm font-medium text-white cursor-pointer bg-slate-500 dark:bg-slate-700 rounded-[100px] w-[137px] transition-colors duration-300 ease-in-out">
           Configure Apps
         </button>
 
         {/* Refined menu */}
         <div className="flex flex-col w-full items-start mt-2 px-2 gap-1">
-          {menuItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => setView(item.label.toLowerCase() as "inbox" | "sent")}
-              className={`flex items-center w-full gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all
-                ${
-                  currentView === item.label.toLowerCase()
-                    ? "bg-dcpurple text-white"
-                    : "text-white hover:bg-dcpurple/20"
-                }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = currentView === item.label.toLowerCase();
+            return (
+              <button
+                key={item.label}
+                onClick={() => setView(item.label.toLowerCase() as "inbox" | "sent")}
+                className={`flex items-center w-full gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out
+                  ${
+                    isActive
+                      ? "bg-dcpurple text-white"
+                      : "text-black dark:text-white hover:bg-dcpurple/20"
+                  }`}
+              >
+                <span className={`transition-colors duration-300 ease-in-out ${isActive ? "text-white" : "text-black dark:text-white"}`}>
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </aside>
 
