@@ -17,6 +17,7 @@ import bcrypt
 
 from fastapi import Query
 from pymongo import ASCENDING, DESCENDING
+from bson import ObjectId
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -100,16 +101,89 @@ def get_all_notifications():
 
 #Get notification depending on user_id **CAN CHANGE**
 @app.get("/notifications/user/{user_id}",response_model=List[dict])
-def get_notification_user(user_id: int):
-    notification_ids_list = [notif["notification_id"] for notif in list(userNotifications_collection.find({"user_id": user_id}, {"_id": 0}))]
+def get_notification_user(user_id: str):
+    # Find all user notifications for this user
+    user_notifications = list(userNotifications_collection.find({"user_id": user_id}, {"_id": 0}))
+    
+    # Extract notification IDs
+    notification_ids_list = [notif["notification_id"] for notif in user_notifications]
+    
+    # If no notifications found, return empty list instead of error
+    if not notification_ids_list:
+        return []
+    
+    # Find all notifications with these IDs
     user_notif = list(notifications_collection.find({"notification_id": {"$in": notification_ids_list}, "is_Active": True}, {"_id": 0}))
-    if not user_notif:
-        raise HTTPException(status_code=404, detail=f"No notification found for user_id '{user_id}'.")
     return user_notif
+
+@app.get("/notifications/sent/user/{user_id}",response_model=List[dict])
+def get_sent_notification_user(user_id: str):
+    try:
+        # Always use user_id as a string for Sender_id
+        # Find all active notifications sent by this user
+        sent_notifications = list(notifications_collection.find(
+            {"Sender_id": user_id, "is_Active": True}, 
+            {"_id": 0}
+        ))
+        
+        # If no notifications found, return empty list
+        if not sent_notifications:
+            return []
+        
+        # Process each notification
+        for notif in sent_notifications:
+            notif_id = notif["notification_id"]
+            
+            # Get all recipients for this notification
+            all_recipients = list(userNotifications_collection.find(
+                {"notification_id": notif_id}, 
+                {"_id": 0}
+            ))
+            
+            # Extract user IDs
+            all_user_ids = [recipient["user_id"] for recipient in all_recipients]
+            
+            # Get user emails with error handling
+            all_user_emails = []
+            for user_id in all_user_ids:
+                try:
+                    # Convert string ID to ObjectId
+                    object_id = ObjectId(user_id)
+                    # Get the user document with all fields except password
+                    user = user_collection.find_one({"_id": object_id}, {"_id": 0, "password": 0})
+                    
+                    if user:
+                        # Check if user exists and has an email
+                        if "email" in user and user["email"]:
+                            all_user_emails.append(user["email"])
+                        else:
+                            # If no email found, try to use username or a fallback
+                            if "username" in user and user["username"]:
+                                all_user_emails.append(user["username"])
+                            else:
+                                all_user_emails.append(f"User {user_id}")
+                    else:
+                        all_user_emails.append(f"User {user_id}")
+                except Exception as e:
+                    print(f"Error getting user {user_id}: {str(e)}")
+                    all_user_emails.append(f"User {user_id}")
+            
+            notif["sent_to"] = all_user_emails
+        
+        return sent_notifications
+    except Exception as e:
+        # Log the error and return an empty list
+        print(f"Error in get_sent_notification_user: {str(e)}")
+        return []
 
 #Create a notification depending on type
 @app.post("/notifications/{notification_type}")
 def create_notification(notification_type: str, notification_data: dict):
+    # Validate notification data
+    if "Recipient_id" not in notification_data or not notification_data["Recipient_id"]:
+        raise HTTPException(status_code=400, detail="Recipient_id is required and cannot be empty")
+    
+    # Generate a unique notification ID
     notifID = uuid4().int >> 96
 
     base_fields = {
@@ -120,11 +194,12 @@ def create_notification(notification_type: str, notification_data: dict):
         "is_Archived": False,
         "is_Active": True,
         "date_Created": datetime.now(),
-        "notification_type":notification_type,
+        "notification_type": notification_type,
         "subject": notification_data.get("title") or notification_data.get("subject") or "Untitled",
-        "details":{}
+        "details": {}
     }
 
+    # Process notification based on type
     if notification_type == "policy":
         notification = BaseNotification(**{
             **base_fields,
@@ -132,6 +207,9 @@ def create_notification(notification_type: str, notification_data: dict):
             "details": PolicyNotification(**notification_data["details"])
         })
     elif notification_type == "claims":
+        # Convert ISO string to datetime for claims notification
+        if "details" in notification_data and "due_Date" in notification_data["details"]:
+            notification_data["details"]["due_Date"] = datetime.fromisoformat(notification_data["details"]["due_Date"].replace("Z", "+00:00"))
         notification = BaseNotification(**{
             **base_fields,
             **notification_data,
@@ -150,21 +228,32 @@ def create_notification(notification_type: str, notification_data: dict):
     notification_dict = notification.model_dump()
     notification_dict["is_Active"] = True
 
-    userNotifs = []
-    for userId in notification_data["Recipient_id"]:
-        userNotifs.append(
-        {
-            "notification_id": notifID,
-            "user_id":userId
-        })
-    userNotifications_collection.insert_many(userNotifs)
-
-    notifications_collection.insert_one(notification_dict)
-    return {"message": "Notification added successfully"}
+    # Create user notification entries
+    try:
+        # First, insert the notification
+        notifications_collection.insert_one(notification_dict)
+        
+        # Then, create simplified user notification entries with only notification_id and user_id
+        userNotifs = []
+        for userId in notification_data["Recipient_id"]:
+            userNotifs.append({
+                "notification_id": notifID,
+                "user_id": userId
+            })
+        
+        # Insert all user notifications in a single operation
+        if userNotifs:
+            userNotifications_collection.insert_many(userNotifs)
+        
+        return {"message": "Notification added successfully", "notification_id": notifID}
+    except Exception as e:
+        # If there's an error, attempt to clean up
+        notifications_collection.delete_one({"notification_id": notifID})
+        raise HTTPException(status_code=500, detail=f"Error creating notification: {str(e)}")
 
 @app.patch("/notifications/{notification_id}")
 def soft_delete_Notif(notification_id:int):
-    res = notifications_collection.update_one({"_id":notification_id}, {"$set":{"is_Active":False}})
+    res = notifications_collection.update_one({"notification_id": notification_id}, {"$set":{"is_Active":False}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message" :"Notification deleted successfully"}
@@ -175,9 +264,9 @@ def soft_delete_Notif(notification_id:int):
 def update_Notifs(notification_id:int,attribute:str):
     if attribute not in ["is_Read","is_Archived"]:
         raise HTTPException(status_code=400,detail=f"Invalid attribute '{attribute}', must be 'is_Read' or 'is_Archived'.")
-    notification = notifications_collection.find_one({"_id":notification_id,"is_Active":True},{attribute:1})
+    notification = notifications_collection.find_one({"notification_id":notification_id,"is_Active":True},{attribute:1})
     new_val = not notification.get(attribute)
-    res = notifications_collection.update_one({"_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
+    res = notifications_collection.update_one({"notification_id":notification_id, "is_Active":True},{"$set":{attribute:new_val}})
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
