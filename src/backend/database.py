@@ -236,5 +236,7 @@ def fieldwise_search(query: str):
     }
 
     # Run the query
-    results = list(collection.find(regex_query, {"_id": 0}))
+    results = list(notifications_collection.find(regex_query, {"_id": 0}))
+    
+    # Return results (empty list if no notifications are found)
     return results
