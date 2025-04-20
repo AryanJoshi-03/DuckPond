@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 
 const schemaRegister = z.object({
   username: z.string()
@@ -41,16 +42,6 @@ export async function registerUserAction(prevState: any, formData: FormData) {
     };
   }
   
-  // return {
-  //   ...prevState,
-  //   data: "ok",
-  //   firstname: formData.get("firstname"),
-  //   lastname: formData.get("lastname"),
-  //   username: formData.get("username"),
-  //   password: formData.get("password"),
-  //   email: formData.get("email"),
-  // };
-
   // 2. Send to backend
   try {
     const response = await fetch(`http://127.0.0.1:8000/signup`, {
@@ -61,23 +52,52 @@ export async function registerUserAction(prevState: any, formData: FormData) {
       body: JSON.stringify(validatedFields.data),
     });
 
+    const responseData = await response.json();
     if (!response.ok) {
-      const error = await response.json();
+      // Check if the error is due to existing user
+      if (responseData.detail && responseData.detail.includes("already taken")) {
+        // Check if the error is specifically for username or email
+        const errorMessage = responseData.detail.toLowerCase();
+        
+        if (errorMessage.includes("username")) {
+          return {
+            ...prevState,
+            data: "bad",
+            message: "Username already exists. Please choose a different username.",
+            existingUsernameError: true
+          };
+        } else if (errorMessage.includes("email")) {
+          return {
+            ...prevState,
+            data: "bad",
+            message: "Email already exists. Please use a different email address.",
+            existingEmailError: true
+          };
+        } else {
+          return {
+            ...prevState,
+            data: "bad",
+            message: "Username or email already exists. Please try a different one.",
+            existingUserError: true
+          };
+        }
+      }
+      
       return {
         ...prevState,
         data: "bad",
-        message: error.message || "Registration failed",
+        message: responseData.message || "Registration failed",
       };
     }
 
-    // const user = await response.json();
+    // Return success with redirect flag
     return {
       ...prevState,
       data: "ok",
-      // user,  // Pass backend response to formState
       message: "Registration successful!",
+      redirect: "/signin"
     };
-
+    
   } catch (error) {
     return {
       ...prevState,

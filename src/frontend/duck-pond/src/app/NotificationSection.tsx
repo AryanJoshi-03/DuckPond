@@ -72,7 +72,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdown]);
-
+  
   React.useEffect(() => {
     const fetchNotifications = async () => {
       setIsLoading(true);
@@ -96,7 +96,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
         setIsLoading(false);
       }
     };
-    
+
     const fetchSent = async () => {
       setIsLoading(true);
       setError(null);
@@ -122,7 +122,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     
     // Only fetch notifications when in inbox view
     if (view === "inbox") {
-      fetchNotifications();
+    fetchNotifications();
     } else if (view === "sent") {
       fetchSent();
     } else if (view === "drafts") {
@@ -167,20 +167,20 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       flag: "Important",
       read: notification.is_Read ? "Read" : "Unread",
     };
-    
+
     // Create a basic notification object with default values
     let formattedNotification = {
       ...notification,
-      ...common,
+        ...common,
       sender: notification.Sender_id || "System",
       subject: notification.subject || "No Subject",
       preview: "",
-      date: formatDate(notification.date_Created),
+        date: formatDate(notification.date_Created),
       department: (notification.notification_type || "General").toLowerCase(),
       dept: (notification.notification_type || "General").toLowerCase(),
       isRead: notification.is_Read || false,
       recipients: notification.sent_to || [],
-    };
+      };
     
     // Add preview based on notification type
     if (notification.notification_type === "policy" && notification.details && notification.details.body) {
@@ -197,7 +197,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     if (notification.sent_to && Array.isArray(notification.sent_to)) {
       formattedNotification.preview = `Sent to ${notification.sent_to.length} recipient(s)`;
     }
-    
+
     return formattedNotification;
   };
 
@@ -234,9 +234,9 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       ) : (
         <>
           {view === "inbox" ? (
-            <>
-              <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
-                {filterButtons.map((button) => (
+        <>
+          <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
+            {filterButtons.map((button) => (
                   <div 
                     key={button} 
                     className="relative"
@@ -246,48 +246,48 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                       }
                     }}
                   >
-                    <button
-                      onClick={() => handleDropdownToggle(button)}
-                      className="px-6 h-10 text-sm font-medium text-white bg-dcpurple rounded-[100px]"
-                    >
-                      {button}
-                    </button>
-                    {openDropdown === button && (
-                      <Dropdown
-                        items={dropdownItems[button as keyof typeof dropdownItems]}
-                        selectedItems={selectedItems[button]}
-                        onSelect={(item) => handleSelectItem(button, item)}
-                      />
-                    )}
-                  </div>
-                ))}
+                <button
+                  onClick={() => handleDropdownToggle(button)}
+                  className="px-6 h-10 text-sm font-medium text-white bg-dcpurple rounded-[100px]"
+                >
+                  {button}
+                </button>
+                {openDropdown === button && (
+                  <Dropdown
+                    items={dropdownItems[button as keyof typeof dropdownItems]}
+                    selectedItems={selectedItems[button]}
+                    onSelect={(item) => handleSelectItem(button, item)}
+                  />
+                )}
               </div>
+            ))}
+          </div>
 
-              <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
                 {isLoading ? (
                   <p className="text-center text-gray-500">Loading notifications...</p>
                 ) : error ? (
                   <p className="text-center text-red-500">{error}</p>
                 ) : filteredNotifications.length === 0 ? (
-                  <p className="text-center text-gray-500">No notifications found.</p>
-                ) : (
-                  filteredNotifications.map((notification, index) => (
-                    <NotificationCard
-                      key={index}
+              <p className="text-center text-gray-500">No notifications found.</p>
+            ) : (
+              filteredNotifications.map((notification, index) => (
+                <NotificationCard
+                  key={index}
                       appName={notification.App_type}
                       sender={notification.Sender_id}
-                      subject={notification.subject}
-                      preview={notification.preview}
+                  subject={notification.subject}
+                  preview={notification.preview}
                       date={new Date(notification.date_Created).toLocaleDateString()}
                       department={notification.notification_type}
-                      isRead={notification.isRead}
+                  isRead={notification.isRead}
                       onClick={() => setSelectedNotification(notification)}
                       isSent={false}
                       recipients={[]}
-                    />
-                  ))
-                )}
-              </div>
+                />
+              ))
+            )}
+          </div>
             </>
           ) : view === "sent" ? (
             <div className="flex flex-col items-center w-full pt-8">

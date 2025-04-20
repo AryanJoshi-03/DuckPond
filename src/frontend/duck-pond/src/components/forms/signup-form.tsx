@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { registerUserAction } from "@/data/actions/auth-actions";
+import { useState, useEffect } from "react";
+import toast, { Toaster } from 'react-hot-toast';
 
 import {
   CardTitle,
-  CardDescription,
+  CardDescription,  
   CardHeader,
   CardContent,
   CardFooter,
@@ -23,19 +26,67 @@ const INITIAL_STATE = {
 };
 
 export function SignupForm() {
+  const router = useRouter();
   const [formState, formAction] = useActionState(
     registerUserAction,
     INITIAL_STATE
   );
+  
+  // State to store form values
+  const [formValues, setFormValues] = useState({
+    first_Name: "",
+    last_Name: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   console.log("## will render on client ##");
   console.log(formState);
   console.log("###########################");
 
+  // Show error toast if user already exists
+  useEffect(() => {
+    if (formState?.data === "bad") {
+      if (formState?.existingUsernameError || formState?.existingEmailError || formState?.existingUserError) {
+        toast.error(formState.message, {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
+    }
+  }, [formState]);
 
+  // Handle redirect after successful registration
+  useEffect(() => {
+    if (formState?.data === "ok" && formState?.redirect) {
+      // Show success toast
+      toast.success('Registration successful! Redirecting to sign in...', {
+        duration: 3000,
+        position: 'top-center',
+      });
+      
+      // Redirect after a short delay to allow the toast to be seen
+      const redirectTimer = setTimeout(() => {
+        router.push(formState.redirect);
+      }, 1500);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [formState, router]);
   
   return (
     <div className="w-full max-w-md">
+      <Toaster />
       <form action={formAction}>
         <Card>
           <CardHeader className="space-y-1">
@@ -53,6 +104,8 @@ export function SignupForm() {
                 name="first_Name"
                 type="text"
                 placeholder="John"
+                value={formValues.first_Name}
+                onChange={handleInputChange}
               />
               <ZodErrors error={formState?.zodErrors?.first_Name} />
             </div>
@@ -65,6 +118,8 @@ export function SignupForm() {
                 name="last_Name"
                 type="text"
                 placeholder="Doe"
+                value={formValues.last_Name}
+                onChange={handleInputChange}
               />
               <ZodErrors error={formState?.zodErrors?.last_Name} />
             </div>
@@ -75,8 +130,14 @@ export function SignupForm() {
                 name="username"
                 type="text"
                 placeholder="username"
+                value={formValues.username}
+                onChange={handleInputChange}
+                className={formState?.existingUsernameError ? "border-red-500" : ""}
               />
               <ZodErrors error={formState?.zodErrors?.username} />
+              {formState?.existingUsernameError && (
+                <p className="text-sm text-red-500">Username already exists</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -85,8 +146,14 @@ export function SignupForm() {
                 name="email"
                 type="email"
                 placeholder="name@example.com"
+                value={formValues.email}
+                onChange={handleInputChange}
+                className={formState?.existingEmailError ? "border-red-500" : ""}
               />
               <ZodErrors error={formState?.zodErrors?.email} />
+              {formState?.existingEmailError && (
+                <p className="text-sm text-red-500">Email already exists</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -96,6 +163,8 @@ export function SignupForm() {
                 name="password"
                 type="password"
                 placeholder="password"
+                value={formValues.password}
+                onChange={handleInputChange}
               />
               <ZodErrors error={formState?.zodErrors?.password} />
             </div>
