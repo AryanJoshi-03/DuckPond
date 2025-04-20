@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 const schemaRegister = z.object({
   username: z.string()
@@ -18,6 +20,11 @@ const schemaRegister = z.object({
   last_Name: z.string()
     .min(1, { message: "Must be at least 1 character" })
     .max(50, { message: "Cannot exceed 50 characters" })
+})
+
+const schemaSignIn = z.object({
+  identifier: z.string().min(1, { message: "Username or email is required" }),
+  password: z.string().min(1, { message: "Password is required" })
 })
 
 export async function registerUserAction(prevState: any, formData: FormData) {
@@ -40,7 +47,7 @@ export async function registerUserAction(prevState: any, formData: FormData) {
       message: "Missing Fields. Failed to Register.",
     };
   }
-
+  
   // 2. Send to backend
   try {
     const response = await fetch(`http://127.0.0.1:8000/signup`, {
@@ -51,22 +58,128 @@ export async function registerUserAction(prevState: any, formData: FormData) {
       body: JSON.stringify(validatedFields.data),
     });
 
+    const responseData = await response.json();
+
     if (!response.ok) {
-      const error = await response.json();
+      // Check if the error is due to existing user
+      if (responseData.detail && responseData.detail.includes("already taken")) {
+        // Check if the error is specifically for username or email
+        const errorMessage = responseData.detail.toLowerCase();
+        
+        if (errorMessage.includes("username")) {
+          return {
+            ...prevState,
+            data: "bad",
+            message: "Username already exists. Please choose a different username.",
+            existingUsernameError: true
+          };
+        } else if (errorMessage.includes("email")) {
+          return {
+            ...prevState,
+            data: "bad",
+            message: "Email already exists. Please use a different email address.",
+            existingEmailError: true
+          };
+        } else {
+          return {
+            ...prevState,
+            data: "bad",
+            message: "Username or email already exists. Please try a different one.",
+            existingUserError: true
+          };
+        }
+      }
+      
       return {
         ...prevState,
         data: "bad",
-        message: error.message || "Registration failed",
+        message: responseData.message || "Registration failed",
       };
     }
 
-    // If successful, display a success message
+    // Return success with redirect flag
     return {
       ...prevState,
       data: "ok",
-      message: "Signup was successful! Welcome to DuckPond!",
+      message: "Registration successful!",
+      redirect: "/signin"
     };
+    
+  } catch (error) {
+    return {
+      ...prevState,
+      data: "bad",
+      message: "Network error",
+    };
+  }
+}
 
+export async function signInUserAction(prevState: any, formData: FormData) {
+  console.log("Hello From Sign In User Action");
+
+  const validatedFields = schemaSignIn.safeParse({
+    identifier: formData.get("identifier"),
+    password: formData.get("password"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      ...prevState,
+      data: "bad",
+      zodErrors: validatedFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Sign In.",
+    };
+  }
+
+  // Determine if identifier is email or username
+  const identifier = validatedFields.data.identifier;
+  const isEmail = identifier.includes("@");
+  
+  // Prepare login data
+  const loginData = {
+    username: isEmail ? "" : identifier,
+    email: isEmail ? identifier : "",
+    password: validatedFields.data.password,
+    user_ID: 0 // This will be set by the backend
+  };
+  console.log(loginData)
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(loginData),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      return {
+        ...prevState,
+        data: "bad",
+        message: responseData.detail || "Invalid username/email or password",
+        invalidCredentials: true
+      };
+    }
+
+    // Store the token in cookies
+    const cookieStore = await cookies();
+    cookieStore.set('token', responseData.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    // Return success with redirect flag
+    return {
+      ...prevState,
+      data: "ok",
+      message: "Sign in successful!",
+      redirect: "/"
+    };
+    
   } catch (error) {
     return {
       ...prevState,

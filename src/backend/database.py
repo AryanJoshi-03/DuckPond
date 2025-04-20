@@ -244,7 +244,7 @@ def create_notification(notification_type: str, notification_data: dict):
         # Insert all user notifications in a single operation
         if userNotifs:
             userNotifications_collection.insert_many(userNotifs)
-        
+
         return {"message": "Notification added successfully", "notification_id": notifID}
     except Exception as e:
         # If there's an error, attempt to clean up
@@ -277,33 +277,69 @@ def createUser(user: UserCreate):
     
     # print(f"Received user data: {user.dict()}")  # Add this line
 
-    existed_username = user_collection.find_one({"username":user.username,"email":user.email})
+    # Check if username already exists
+    existed_username = user_collection.find_one({"username": user.username})
     if existed_username:
-        raise HTTPException(status_code=400,detail="Username already taken.")
+        raise HTTPException(status_code=400, detail="Username already taken.")
+    
+    # Check if email already exists
+    existed_email = user_collection.find_one({"email": user.email})
+    if existed_email:
+        raise HTTPException(status_code=400, detail="Email already taken.")
+    
+    # If both checks pass, proceed with user creation
     password = user.password
     bytes = password.encode('utf-8')
-    hashed_pw = bcrypt.hashpw(bytes,bcrypt.gensalt())
+    hashed_pw = bcrypt.hashpw(bytes, bcrypt.gensalt())
     user_data = {
-        "first_Name":user.first_Name,
-        "last_Name":user.last_Name,
-        "email":user.email,
-        "username":user.username,
-        "password":hashed_pw,
-        "user_Type":"Employee"
+        "first_Name": user.first_Name,
+        "last_Name": user.last_Name,
+        "email": user.email,
+        "username": user.username,
+        "password": hashed_pw,
+        "user_Type": "Employee"
     }
     user_collection.insert_one(user_data)
-    return{"Message":"User registered successfully."}
+    return {"Message": "User registered successfully."}
 
 @app.post("/login")
 def loginUser(user: UserLogin):
-    user_data = user_collection.find_one({"username":user.username,"email":user.email})
-    if not user_data:
-        raise HTTPException(status_code=400,detail="Invalid username or password.")
-    hashed_pw = user_data["password"]
-    if bcrypt.checkpw(user.password.encode('utf-8'),hashed_pw):
-        return {"Message":"Login successful."}
+    # Check if identifier is email or username
+    if user.username != "":  # If username field contains email
+        user_data = user_collection.find_one({"username": user.username})
     else:
-        raise HTTPException(status_code=400,detail="Invalid username or password.")
+        user_data = user_collection.find_one({"email": user.email})
+    
+    if not user_data:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid username/email or password."
+        )
+    
+    # Verify password
+    hashed_pw = user_data["password"]
+    if bcrypt.checkpw(user.password.encode('utf-8'), hashed_pw):
+        # Generate a token (you might want to use JWT or another token generation method)
+        token = str(uuid4())  # This is a simple example, consider using JWT
+        
+        # Return user data and token
+        return {
+            "message": "Login successful.",
+            "token": token,
+            "user": {
+                "id": str(user_data["_id"]),
+                "username": user_data["username"],
+                "email": user_data["email"],
+                "first_Name": user_data["first_Name"],
+                "last_Name": user_data["last_Name"],
+                "user_Type": user_data["user_Type"]
+            }
+        }
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid username/email or password."
+        )
 
 # Andrew Bell Search bar function help from chat
 # Create a text index on all string fields
