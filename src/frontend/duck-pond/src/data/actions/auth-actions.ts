@@ -40,16 +40,6 @@ export async function registerUserAction(prevState: any, formData: FormData) {
       message: "Missing Fields. Failed to Register.",
     };
   }
-  
-  // return {
-  //   ...prevState,
-  //   data: "ok",
-  //   firstname: formData.get("firstname"),
-  //   lastname: formData.get("lastname"),
-  //   username: formData.get("username"),
-  //   password: formData.get("password"),
-  //   email: formData.get("email"),
-  // };
 
   // 2. Send to backend
   try {
@@ -70,12 +60,11 @@ export async function registerUserAction(prevState: any, formData: FormData) {
       };
     }
 
-    // const user = await response.json();
+    // If successful, display a success message
     return {
       ...prevState,
       data: "ok",
-      // user,  // Pass backend response to formState
-      message: "Registration successful!",
+      message: "Signup was successful! Welcome to DuckPond!",
     };
 
   } catch (error) {
