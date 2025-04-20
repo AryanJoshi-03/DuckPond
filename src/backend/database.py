@@ -304,14 +304,42 @@ def createUser(user: UserCreate):
 
 @app.post("/login")
 def loginUser(user: UserLogin):
-    user_data = user_collection.find_one({"username":user.username,"email":user.email})
-    if not user_data:
-        raise HTTPException(status_code=400,detail="Invalid username or password.")
-    hashed_pw = user_data["password"]
-    if bcrypt.checkpw(user.password.encode('utf-8'),hashed_pw):
-        return {"Message":"Login successful."}
+    # Check if identifier is email or username
+    if user.username != "":  # If username field contains email
+        user_data = user_collection.find_one({"username": user.username})
     else:
-        raise HTTPException(status_code=400,detail="Invalid username or password.")
+        user_data = user_collection.find_one({"email": user.email})
+    
+    if not user_data:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid username/email or password."
+        )
+    
+    # Verify password
+    hashed_pw = user_data["password"]
+    if bcrypt.checkpw(user.password.encode('utf-8'), hashed_pw):
+        # Generate a token (you might want to use JWT or another token generation method)
+        token = str(uuid4())  # This is a simple example, consider using JWT
+        
+        # Return user data and token
+        return {
+            "message": "Login successful.",
+            "token": token,
+            "user": {
+                "id": str(user_data["_id"]),
+                "username": user_data["username"],
+                "email": user_data["email"],
+                "first_Name": user_data["first_Name"],
+                "last_Name": user_data["last_Name"],
+                "user_Type": user_data["user_Type"]
+            }
+        }
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid username/email or password."
+        )
 
 # Andrew Bell Search bar function help from chat
 # Create a text index on all string fields
