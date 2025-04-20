@@ -209,3 +209,4 @@ def loginUser(user: UserLogin):
         return {"Message":"Login successful."}
     else:
         raise HTTPException(status_code=400,detail="Invalid username or password.")
+    
