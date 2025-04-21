@@ -59,9 +59,15 @@ export function SigninForm() {
     }
   }, [formState]);
 
-  // Handle redirect after successful sign in
+  // Handle redirect and cookie setting after successful sign in
   useEffect(() => {
     if (formState?.data === "ok" && formState?.redirect) {
+      // Set the token in cookies
+      if (formState.token) {
+        document.cookie = `token=${formState.token}; path=/; secure; samesite=lax`;
+        console.log('Token set in cookies:', formState.token);
+      }
+
       // Show success toast
       toast.success('Sign in successful! Redirecting...', {
         duration: 3000,

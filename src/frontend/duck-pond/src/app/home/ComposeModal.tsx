@@ -3,7 +3,9 @@ import { useTheme } from "next-themes";
 import PolicyFields from "./PolicyFields";
 import NewsFields from "./NewsFields";
 import ClaimsFields from "./ClaimsFields";
-import UserSelect from "../components/UserSelect";
+import UserSelect from "../../components/UserSelect";
+import { useAuth } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 interface ComposeModalProps {
   onClose: () => void;
@@ -12,7 +14,7 @@ interface ComposeModalProps {
 const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
+  const { user, loading, isAuthenticated } = useAuth();
   // After mounting, we can safely show the UI
   useEffect(() => {
     setMounted(true);
@@ -56,13 +58,15 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
     
     // Validate that at least one recipient is selected
     if (selectedUsers.length === 0) {
-      alert("Please select at least one recipient");
+      toast.error("Please select at least one recipient");
       return;
     }
     
     let notification: any = {
       Recipient_id: selectedUsers,
       flag: "none",
+      Sender_id: user?.id,
+      Sender_email: user?.email,
     };
 
     if (notificationType === "claims") {
@@ -93,17 +97,17 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
       notification = {
         ...notification,
         subject: title,
-        details:{
+        details: {
           expiration_Date: new Date(expirationDate).toISOString(),
           type,
           title,
-          newsdetails,
+          details: newsdetails,
         },
       };
     } else if (notificationType === "claims") {
       // Validate required fields
       if (!insuredName || !claimantName || !taskType || !dueDate || !lineBusiness || !description) {
-        alert("Please fill in all required fields for the claims notification.");
+        toast.error("Please fill in all required fields for the claims notification.");
         return;
       }
 
@@ -120,7 +124,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
         }
       };
     } else {
-      alert("Please select a notification type.");
+      toast.error("Please select a notification type.");
       return;
     }
 
@@ -135,7 +139,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
       if (response.ok) {
         const result = await response.json();
         console.log("Notification posted successfully:", result);
-        alert(`Notification sent successfully to ${selectedUsers.length} recipient(s)!`);
+        toast.success(`Notification sent successfully to ${selectedUsers.length} recipient(s)!`);
         onClose();
         // 🔄 Reset Fields
         setTitle(""); 
@@ -157,11 +161,11 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
       } else {
         const errorData = await response.json();
         console.error("Failed to send notification:", errorData);
-        alert(`Failed to send notification: ${errorData.detail || "Unknown error"}`);
+        toast.error(`Failed to send notification: ${errorData.detail || "Unknown error"}`);
       }
     } catch (err) {
       console.error("Error during fetch:", err);
-      alert("An error occurred while sending the notification. Please try again.");
+      toast.error("An error occurred while sending the notification. Please try again.");
     }
   };
 
