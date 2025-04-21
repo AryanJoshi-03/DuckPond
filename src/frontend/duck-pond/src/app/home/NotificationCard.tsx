@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
 interface NotificationCardProps {
   appName: string;
@@ -11,6 +12,8 @@ interface NotificationCardProps {
   department: string;
   isRead: boolean;
   onClick?: () => void; // ✅ Optional click handler
+  isSent?: boolean; // Add this prop to indicate if it's a sent notification
+  recipients?: string[]; // Add this prop for the list of recipients
 }
 
 const getAppLogo = (appName: string) => {
@@ -90,7 +93,31 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   department,
   isRead,
   onClick,
+  isSent = false, // Default to false
+  recipients = [], // Default to empty array
 }) => {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  // After mounting, we can safely show the UI
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Format recipients for display
+  const formatRecipients = () => {
+    console.log("Recipients:", recipients);
+    if (!recipients || recipients.length === 0) {
+      return "No recipients";
+    }
+    
+    if (recipients.length === 1) {
+      return `To: ${recipients[0]}`;
+    }
+    
+    return `To: ${recipients[0]} +${recipients.length - 1} more`;
+  };
+
   return (
     <div
       onClick={onClick}
@@ -103,14 +130,16 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         {/* Left side: text info */}
         <div className="flex flex-col px-2 flex-1">
           <span className="text-sm text-zinc-600 dark:text-zinc-300">
-            {sender} • {department}
+            {isSent ? formatRecipients() : `${sender} • ${department}`}
           </span>
           <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900 dark:text-zinc-100`}>
             {subject}
           </span>
-          <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[300px]">
-            {preview}
-          </span>
+          {!isSent && (
+            <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[300px]">
+              {preview}
+            </span>
+          )}
         </div>
       </div>
 
@@ -118,7 +147,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       <div className="flex items-center gap-4 ml-4">
         <span className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{date}</span>
         <img
-          src="/DP_Logo_White.png"
+          src={mounted && theme === "light" ? "/DP_Logo_Black.png" : "/DP_Logo_White.png"}
           alt="DuckPond Logo"
           className="w-10 h-10"
         />
