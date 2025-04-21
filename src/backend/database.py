@@ -381,8 +381,18 @@ def loginUser(user: UserLogin):
 def fieldwise_search(query: str):
     # Define the fields to search in
     fields_to_search = [
-        "subject", "title", "details", "description",
-        "body", "insured_Name", "claimant_Name", "task_Type"
+        "subject",
+        "Sender_email",
+        "Sender_id",
+        "details.body",         
+        "details.details",      
+        "details.description",  
+        "title",                
+        "description",          
+        "body",                 
+        "insured_Name",
+        "claimant_Name",
+        "task_Type"
     ]
 
     # Create the $or regex query
@@ -394,7 +404,7 @@ def fieldwise_search(query: str):
     }
 
     # Run the query
-    results = list(collection.find(regex_query, {"_id": 0}))
+    results = list(notifications_collection.find(regex_query, {"_id": 0}))
     return results
 
 # Get all users for autocomplete
