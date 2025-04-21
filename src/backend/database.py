@@ -1,10 +1,11 @@
 import os
-from typing import List, Union
+import jwt
+from typing import List, Union, Optional
 from pymongo import MongoClient
 
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI, HTTPException
 
@@ -53,10 +54,13 @@ class PolicyNotification(BaseModel):
 
 
 class NewsNotification(BaseModel):
-    expiration_Date:datetime
-    type:str
-    title:str
-    details:str
+    expiration_Date: Optional[datetime] = Field(default_factory=lambda: datetime.now() + timedelta(days=365))
+    type: Optional[str] = Field(default="general")
+    title: Optional[str] = Field(default="")
+    details: Optional[str] = Field(default="")
+
+    class Config:
+        extra = "allow"  # Allow extra fields
 
 class ClaimsNotification(BaseModel):
     insured_Name:str
@@ -68,7 +72,8 @@ class ClaimsNotification(BaseModel):
 
 class BaseNotification(BaseModel):
     notification_id:int
-    Sender_id:int
+    Sender_id:str
+    Sender_email:str
     App_type:str
     is_Read:bool
     is_Archived:bool
@@ -204,7 +209,7 @@ def create_notification(notification_type: str, notification_data: dict):
         notification = BaseNotification(**{
             **base_fields,
             **notification_data,
-            "details": PolicyNotification(**notification_data["details"])
+            "details": PolicyNotification(**notification_data.get("details", {}))
         })
     elif notification_type == "claims":
         # Convert ISO string to datetime for claims notification
@@ -213,13 +218,28 @@ def create_notification(notification_type: str, notification_data: dict):
         notification = BaseNotification(**{
             **base_fields,
             **notification_data,
-            "details": ClaimsNotification(**notification_data["details"])
+            "details": ClaimsNotification(**notification_data.get("details", {}))
         })
     elif notification_type == "news":
+        # Handle news notification data
+        news_details = notification_data.get("details", {})
+        if isinstance(news_details, str):
+            news_details = {"details": news_details}
+        elif not isinstance(news_details, dict):
+            news_details = {"details": str(news_details)}
+        
+        # Ensure all required fields are present
+        news_data = {
+            "expiration_Date": news_details.get("expiration_Date", datetime.now() + timedelta(days=365)),
+            "type": news_details.get("type", "general"),
+            "title": news_details.get("title", ""),
+            "details": news_details.get("details", "")
+        }
+        
         notification = BaseNotification(**{
             **base_fields,
             **notification_data,
-            "details": NewsNotification(**notification_data["details"])
+            "details": NewsNotification(**news_data)
         })
     else:
         raise HTTPException(status_code=400, detail="Invalid notification type")
@@ -302,6 +322,10 @@ def createUser(user: UserCreate):
     user_collection.insert_one(user_data)
     return {"Message": "User registered successfully."}
 
+JWT_SECRET = "your_jwt_secret_key"
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_MINUTES = 1440  # 24 hours
+
 @app.post("/login")
 def loginUser(user: UserLogin):
     # Check if identifier is email or username
@@ -320,8 +344,17 @@ def loginUser(user: UserLogin):
     hashed_pw = user_data["password"]
     if bcrypt.checkpw(user.password.encode('utf-8'), hashed_pw):
         # Generate a token (you might want to use JWT or another token generation method)
-        token = str(uuid4())  # This is a simple example, consider using JWT
+        payload = {
+            "id": str(user_data["_id"]),
+            "email": user_data["email"],
+            "first_Name": user_data["first_Name"],
+            "last_Name": user_data["last_Name"],
+            "username": user_data["username"],
+            "exp": datetime.now() + timedelta(minutes=JWT_EXPIRE_MINUTES)
+        }
         
+        # Generate JWT token
+        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         # Return user data and token
         return {
             "message": "Login successful.",

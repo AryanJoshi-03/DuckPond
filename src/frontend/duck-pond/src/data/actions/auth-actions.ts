@@ -163,21 +163,13 @@ export async function signInUserAction(prevState: any, formData: FormData) {
       };
     }
 
-    // Store the token in cookies
-    const cookieStore = await cookies();
-    cookieStore.set('token', responseData.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    });
-
-    // Return success with redirect flag
+    // Return success with token and redirect flag
     return {
       ...prevState,
       data: "ok",
       message: "Sign in successful!",
-      redirect: "/"
+      token: responseData.token, // Include the token in the response
+      redirect: "/home"
     };
     
   } catch (error) {
@@ -185,6 +177,32 @@ export async function signInUserAction(prevState: any, formData: FormData) {
       ...prevState,
       data: "bad",
       message: "Network error",
+    };
+  }
+}
+
+export async function signOutUserAction() {
+  try {
+    // Clear the token cookie on the server side
+    const cookieStore = await cookies();
+    cookieStore.set('token', '', { 
+      expires: new Date(0),
+      path: '/',
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production'
+    });
+    
+    // Return success with redirect to sign-in page
+    return {
+      data: "ok",
+      message: "Signed out successfully",
+      redirect: "/signin"
+    };
+  } catch (error) {
+    return {
+      data: "bad",
+      message: "Error signing out",
+      error: error
     };
   }
 }

@@ -3,7 +3,8 @@ import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
 import NotifContent from "./NotifContent";
 
-import { SearchBar } from "@/app/SearchBar";
+import { SearchBar } from "@/app/home/SearchBar";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dropdown: React.FC<{
   items: string[];
@@ -37,6 +38,7 @@ interface NotificationSectionProps {
 }
 
 export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }) => {
+  const { user, loading, isAuthenticated } = useAuth();
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
   const dropdownRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -78,7 +80,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch("http://127.0.0.1:8000/notifications/user/67fd9ef604e2c1cce7e1ec9b");
+        const res = await fetch(`http://127.0.0.1:8000/notifications/user/${user?.id}`);
         if (!res.ok) {
           console.error("Error fetching notifications:", res.status);
           setNotifications([]);
@@ -101,7 +103,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch("http://127.0.0.1:8000/notifications/sent/user/0");
+        const res = await fetch(`http://127.0.0.1:8000/notifications/sent/user/${user?.id}`);
         if (!res.ok) {
           console.error("Error fetching sent notifications:", res.status);
           setNotifications([]);
@@ -122,14 +124,14 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     
     // Only fetch notifications when in inbox view
     if (view === "inbox") {
-    fetchNotifications();
+      fetchNotifications();
     } else if (view === "sent") {
       fetchSent();
     } else if (view === "drafts") {
       // For drafts, we'll set an empty array for now
       setNotifications([]);
     }
-  }, [view]);
+  }, [view, user?.id]);
 
   const handleDropdownToggle = (button: string) => {
     setOpenDropdown(openDropdown === button ? null : button);
@@ -275,7 +277,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                 <NotificationCard
                   key={index}
                       appName={notification.App_type}
-                      sender={notification.Sender_id}
+                      sender={notification.Sender_email}
                   subject={notification.subject}
                   preview={notification.preview}
                       date={new Date(notification.date_Created).toLocaleDateString()}
@@ -305,7 +307,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                       <NotificationCard
                         key={index}
                         appName={notification.App_type}
-                        sender={notification.Sender_id}
+                        sender={notification.Sender_email}
                         subject={notification.subject}
                         preview={notification.preview}
                         date={new Date(notification.date_Created).toLocaleDateString()}

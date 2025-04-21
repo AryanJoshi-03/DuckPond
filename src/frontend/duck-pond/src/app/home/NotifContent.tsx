@@ -29,7 +29,7 @@ const NotifContent: React.FC<NotifContentProps> = ({ notification, onClose }) =>
 
     // Extract data from notification object with fallbacks
     const subject = notification.subject || 'No Subject';
-    const sender = notification.Sender_id === 0 ? "DuckPond Bot" : `User ${notification.Sender_id}`;
+    const sender = notification.Sender_email || "DuckPond Bot";
     const timeSent = notification.date_Created ? new Date(notification.date_Created).toLocaleDateString() : 'Unknown date';
     const department = notification.notification_type || 'General';
     
