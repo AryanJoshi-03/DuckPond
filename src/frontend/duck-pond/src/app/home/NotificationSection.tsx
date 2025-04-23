@@ -40,6 +40,7 @@ interface NotificationSectionProps {
 export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }) => {
   const { user, loading, isAuthenticated } = useAuth();
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [query, setQuery] = React.useState("");
   const dropdownRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const filterButtons = ["App", "Dept.", "Time", "Flags", "Read"] as const;
@@ -203,25 +204,47 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     return formattedNotification;
   };
 
-  let filteredNotifications = notifications
-    .map(mapToDisplayFormat)
-    .filter((notification): notification is NonNullable<typeof notification> => {
-      if (!notification) return false;
-      return (
-        (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
-        (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
-        (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => item.toLowerCase() === notification.time.toLowerCase())) &&
-        (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
-        (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()))
-      );
-    });
+  // let filteredNotifications = notifications
+  //   .map(mapToDisplayFormat)
+  //   .filter((notification): notification is NonNullable<typeof notification> => {
+  //     if (!notification) return false;
+  //     return (
+  //       (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
+  //       (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
+  //       (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => item.toLowerCase() === notification.time.toLowerCase())) &&
+  //       (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
+  //       (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()))
+  //     );
+  //   });
 
-    // Combine with search results
-    filteredNotifications = searchResults.length > 0
-    ? filteredNotifications.filter(notification => 
-        searchResults.some(result => result.id === notification.id)
-      )
-    : filteredNotifications;
+  //   // Combine with search results
+  //   filteredNotifications =
+  //   searchResults.length > 0 || query.trim() !== ""
+  //     ? filteredNotifications.filter(notification =>
+  //         searchResults.some(result => result.notification_id === notification.notification_id)
+  //       )
+  //     : filteredNotifications;
+
+  const filteredNotifications = notifications
+  .map(mapToDisplayFormat)
+  .filter((notification): notification is NonNullable<typeof notification> => {
+    if (!notification) return false;
+
+    // Apply filter dropdowns
+    const matchesFilters =
+      (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
+      (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
+      (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => item.toLowerCase() === notification.time.toLowerCase())) &&
+      (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
+      (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()));
+
+    // If there's a search query, apply search result matching too
+    const matchesSearch =
+      query.trim() === "" ||
+      searchResults.some(result => result.notification_id === notification.notification_id);
+
+    return matchesFilters && matchesSearch;
+  });
 
   console.log("Current view:", view);
   console.log("Filtered notifications:", filteredNotifications);
@@ -234,7 +257,13 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
           onClose={() => setSelectedNotification(null)}
         />
       ) : (
+        
         <>
+        <SearchBar
+            query={query}
+            onQueryChange={setQuery}
+            onSearch={setSearchResults}
+          />
           {view === "inbox" ? (
         <>
           <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">

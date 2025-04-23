@@ -27,7 +27,7 @@ export default function Home() {
       </div>
 
       <div className="flex-1 max-w-8/10">
-        <SearchBar />
+        {/* <SearchBar /> */}
         <NotificationSection view={view} />
       </div>
 

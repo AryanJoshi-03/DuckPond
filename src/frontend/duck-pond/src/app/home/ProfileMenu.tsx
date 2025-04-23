@@ -3,8 +3,12 @@ import * as React from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ProfileModal } from "@/app/home/ProfileModal";
+import { SettingsModal } from "@/app/home/SettingsModal";
 export const ProfileMenu: React.FC = () => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const { user, loading, isAuthenticated } = useAuth();
 
 
@@ -55,15 +59,21 @@ export const ProfileMenu: React.FC = () => {
           <button
             className="px-3 py-2 cursor-pointer text-left hover:bg-gray-200 dark:hover:bg-gray-700"
             role="menuitem"
+            onClick={() => {
+              setIsOpen(false);
+              setIsModalOpen(true);
+            }}
           >
             Profile
           </button>
           <button
             className="px-3 py-2 cursor-pointer text-left hover:bg-gray-200 dark:hover:bg-gray-700"
             role="menuitem"
+            onClick={() => setIsSettingsOpen(true)}
           >
             Settings
           </button>
+
           <button
             className="px-3 py-2 cursor-pointer text-left hover:bg-gray-200 dark:hover:bg-gray-700"
             role="menuitem"
@@ -73,6 +83,9 @@ export const ProfileMenu: React.FC = () => {
           <SignOutButton />
         </nav>
       </div>
+      <ProfileModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
+    
   );
 };
