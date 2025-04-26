@@ -51,7 +51,78 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
   const [lineBusiness, setLineBusiness] = useState("");
   const [description, setDescription] = useState("");
 
-
+  const handleSaveDraft = async () => {
+    try {
+      if (!notificationType) {
+        toast.error("Please select a notification type first!");
+        return;
+      }
+  
+      let draftNotification: any = {
+        Recipient_id: [user?.id], // Save to yourself
+        flag: "none",
+        Sender_id: user?.id,
+        Sender_email: user?.email,
+        is_Drafted: true, // ⭐ SAVE AS DRAFT
+      };
+  
+      if (notificationType === "policy") {
+        draftNotification = {
+          ...draftNotification,
+          subject: title,
+          details: {
+            policy_id: parseInt(policyId),
+            body: body,
+          },
+        };
+      } else if (notificationType === "news") {
+        draftNotification = {
+          ...draftNotification,
+          subject: title,
+          details: {
+            expiration_Date: new Date(expirationDate).toISOString(),
+            type,
+            title,
+            details: newsdetails,
+          },
+        };
+      } else if (notificationType === "claims") {
+        draftNotification = {
+          ...draftNotification,
+          subject: taskType,
+          details: {
+            insured_Name: insuredName,
+            claimant_Name: claimantName,
+            task_Type: taskType,
+            due_Date: new Date(dueDate).toISOString(),
+            line_Business: lineBusiness,
+            description: description,
+          },
+        };
+      } else {
+        toast.error("Invalid notification type.");
+        return;
+      }
+  
+      const res = await fetch(`http://localhost:8000/notifications/${notificationType}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftNotification),
+      });
+  
+      if (res.ok) {
+        console.log("Draft saved successfully!");
+        toast.success("Draft saved successfully!");
+        onClose();
+      } else {
+        console.error("Failed to save draft.");
+        toast.error("Failed to save draft.");
+      }
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast.error("Error saving draft.");
+    }
+  };
   // === Submit Form ===
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,8 +341,11 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
             <button className="bg-dcpurple text-white py-1 px-4 rounded-full" onClick={handleSubmit}>
               Send
             </button>
-            <button className="border border-dcpurple text-dcpurple py-1 px-4 rounded-full">
-              Draft
+            <button 
+              onClick={handleSaveDraft}
+              className="border border-dcpurple text-dcpurple py-1 px-4 rounded-full"
+            >
+              Save Draft
             </button>
           </div>
           <button className="bg-dcpurple text-white py-1 px-4 rounded-full">
