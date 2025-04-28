@@ -256,7 +256,16 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       {selectedNotification ? (
         <NotifContent
           notification={selectedNotification}
-          onClose={() => setSelectedNotification(null)}
+          onClose={() => {
+            setSelectedNotification(null)
+            fetch(`http://127.0.0.1:8000/notifications/${selectedNotification.notification_id}/read`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            })
+
+          }}
         />
       ) : (
         <>
