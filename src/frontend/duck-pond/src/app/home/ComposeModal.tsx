@@ -248,23 +248,26 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
 
   const typeWriterEffect = (fullText: string) => {
     let index = 0;
-    const typingSpeed = 30; // ms
-  
+    // Base speed for short messages, gets faster as text gets longer
+    const baseSpeed = 30; // ms
+    const lengthFactor = Math.max(1, Math.log10(fullText.length)); // Logarithmic scaling based on text length
+    
     setTypingMessage(""); // Clear any old typing
   
     const interval = setInterval(() => {
       setTypingMessage(fullText.slice(0, index + 1));
   
+      // Calculate dynamic speed - faster as we progress through longer messages
+      const currentSpeed = Math.max(5, baseSpeed / lengthFactor);
+      
       index++;
   
       if (index >= fullText.length) {
         clearInterval(interval);
-  
-        // After typing is done, move final built message into copilotMessages
         setCopilotMessages(prev => [...prev, { role: "assistant", content: fullText }]);
         setTypingMessage(""); // Clear temporary typing message
       }
-    }, typingSpeed);
+    }, Math.max(5, baseSpeed / lengthFactor)); // Minimum speed of 5ms, gets faster based on length
   };
   
    
@@ -430,11 +433,11 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
       </div>
 
         {copilotOpen && (
-        <div className="bg-white h-full w-[30%] rounded-xl ml-4 flex flex-col shadow-lg overflow-hidden">
+        <div className={`bg-white dark:bg-gray-800 h-full w-[30%] rounded-xl ml-4 flex flex-col shadow-lg overflow-hidden`}>
           {/* Header */}
-          <div className="flex justify-between items-center p-4 border-b">
-            <h3 className="text-xl font-semibold">Copilot ✨</h3>
-            <button onClick={() => setCopilotOpen(false)} className="text-gray-500 hover:text-black">
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Copilot ✨</h3>
+            <button onClick={() => setCopilotOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
               ✕
             </button>
           </div>
@@ -445,7 +448,9 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
             <div
               key={idx}
               className={`rounded-lg p-2 max-w-[80%] ${
-                msg.role === "user" ? "bg-blue-100 self-end" : "bg-gray-200 self-start"
+                msg.role === "user" 
+                  ? "bg-blue-100 dark:bg-blue-900 text-gray-900 dark:text-gray-100 self-end" 
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start"
               }`}
             >
               {msg.content}
@@ -453,16 +458,14 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
           ))}
 
           {typingMessage && (
-            <div className="rounded-lg p-2 max-w-[80%] bg-gray-200 self-start">
+            <div className="rounded-lg p-2 max-w-[80%] bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start">
               {typingMessage}
             </div>
           )}
         </div>
 
-
-
           {/* Input */}
-          <div className="p-4 border-t flex gap-2">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex gap-2">
             <input
               type="text"
               value={copilotInput}
@@ -472,12 +475,12 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
                   handleSendMessage();
                 }
               }}
-              className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-black"
+              className="flex-1 border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Type a message..."
             />
             <button 
               onClick={handleSendMessage} 
-              className="bg-dcpurple text-white rounded-full px-4 py-2"
+              className="bg-dcpurple text-white rounded-full px-4 py-2 hover:bg-purple-700 transition-colors"
             >
               Send
             </button>

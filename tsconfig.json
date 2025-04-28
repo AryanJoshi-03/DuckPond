@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "jsx": "react", // Enables JSX support
+    "module": "commonjs",
+    "target": "es6",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "skipLibCheck": true
+  }
+}
