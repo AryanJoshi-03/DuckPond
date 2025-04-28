@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,status, Response
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -283,6 +283,22 @@ def soft_delete_Notif(notification_id:int):
     return {"Message" :"Notification deleted successfully"}
 
 
+# Mark notification as read
+@app.patch(
+    "/notifications/{notification_id}/read",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Idempotently mark a notification as read"
+)
+def mark_notification_as_read(notification_id: int):
+    # This filter matches only active notifications;
+    # if none match, update_one will do nothing but not error.
+    app.mongodb.notifications_collection.update_one(
+        {"notification_id": notification_id, "is_Active": True},
+        {"$set": {"is_Read": True}}
+    )
+    # Always return 204 regardless of whether a doc was found/modified.
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 # Work in progress 
 @app.patch("notifications/{notification_id}")
 def update_Notifs(notification_id:int,attribute:str):
@@ -294,6 +310,7 @@ def update_Notifs(notification_id:int,attribute:str):
     if res.matched_count ==0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message":f"'{attribute}' toggled to {new_val}"}
+
 
 # Need to make endpoints for USER created ID's USERNAME and hash PASSWORD
 @app.post("/signup")
@@ -410,10 +427,14 @@ def fieldwise_search(query: str):
 
     # Run the query
     results = list(notifications_collection.find(regex_query, {"_id": 0}))
+    
+    # Return results (empty list if no notifications are found)
     return results
 
-# Get all users for autocomplete
-@app.get("/users")
+
+@app.get("/users", response_model=List[dict])
 def get_users():
-    users = list(user_collection.find({}, {"password": 0}))
-    return [{"user_id": str(user["_id"]), "email": user["email"], "username": user["username"]} for user in users]
+    users = list(user_collection.find({}, {"password": 0}))  # Exclude passwords
+    for user in users:
+        user["_id"] = str(user["_id"])  # Convert ObjectId to string
+    return users
