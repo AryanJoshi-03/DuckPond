@@ -77,6 +77,7 @@ class BaseNotification(BaseModel):
     App_type:str
     is_Read:bool
     is_Archived:bool
+    is_Drafted: bool = False
     date_Created:datetime
     subject:str
     notification_type:str
@@ -198,6 +199,7 @@ def create_notification(notification_type: str, notification_data: dict):
         "is_Read": False,
         "is_Archived": False,
         "is_Active": True,
+        "is_Drafted": notification_data.get("is_Drafted", False),
         "date_Created": datetime.now(),
         "notification_type": notification_type,
         "subject": notification_data.get("title") or notification_data.get("subject") or "Untitled",

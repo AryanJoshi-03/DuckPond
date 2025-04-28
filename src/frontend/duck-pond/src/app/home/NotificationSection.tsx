@@ -99,7 +99,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
         setIsLoading(false);
       }
     };
-
+  
     const fetchSent = async () => {
       setIsLoading(true);
       setError(null);
@@ -122,15 +122,13 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
         setIsLoading(false);
       }
     };
-    
-    // Only fetch notifications when in inbox view
+  
     if (view === "inbox") {
       fetchNotifications();
     } else if (view === "sent") {
       fetchSent();
     } else if (view === "drafts") {
-      // For drafts, we'll set an empty array for now
-      setNotifications([]);
+      fetchNotifications(); // Still fetch inbox notifications (drafts are mixed in with is_Drafted = true)
     }
   }, [view, user?.id]);
 
@@ -226,11 +224,16 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
   //     : filteredNotifications;
 
   const filteredNotifications = notifications
+  .filter((n) => {
+    if (view === "inbox" || view === "sent") {
+      return n.is_Drafted !== true;  // 🚨 only include non-drafts in inbox/sent
+    }
+    return true; // For drafts view, keep all
+  })
   .map(mapToDisplayFormat)
   .filter((notification): notification is NonNullable<typeof notification> => {
     if (!notification) return false;
 
-    // Apply filter dropdowns
     const matchesFilters =
       (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
       (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
@@ -238,7 +241,6 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
       (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()));
 
-    // If there's a search query, apply search result matching too
     const matchesSearch =
       query.trim() === "" ||
       searchResults.some(result => result.notification_id === notification.notification_id);
@@ -257,17 +259,18 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
           onClose={() => setSelectedNotification(null)}
         />
       ) : (
-        
         <>
-        <SearchBar
+          <SearchBar
             query={query}
             onQueryChange={setQuery}
             onSearch={setSearchResults}
           />
+  
           {view === "inbox" ? (
-        <>
-          <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
-            {filterButtons.map((button) => (
+            <>
+              {/* Filter Buttons */}
+              <div className="flex flex-wrap gap-4 mb-6 justify-center pt-4 relative">
+                {filterButtons.map((button) => (
                   <div 
                     key={button} 
                     className="relative"
@@ -277,88 +280,127 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                       }
                     }}
                   >
-                <button
-                  onClick={() => handleDropdownToggle(button)}
-                  className="px-6 h-10 text-sm font-medium text-white bg-dcpurple rounded-[100px]"
-                >
-                  {button}
-                </button>
-                {openDropdown === button && (
-                  <Dropdown
-                    items={dropdownItems[button as keyof typeof dropdownItems]}
-                    selectedItems={selectedItems[button]}
-                    onSelect={(item) => handleSelectItem(button, item)}
-                  />
-                )}
+                    <button
+                      onClick={() => handleDropdownToggle(button)}
+                      className="px-6 h-10 text-sm font-medium text-white bg-dcpurple rounded-[100px]"
+                    >
+                      {button}
+                    </button>
+                    {openDropdown === button && (
+                      <Dropdown
+                        items={dropdownItems[button as keyof typeof dropdownItems]}
+                        selectedItems={selectedItems[button]}
+                        onSelect={(item) => handleSelectItem(button, item)}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-4">
+  
+              {/* Inbox Notifications */}
+              <div className="flex flex-col gap-4">
                 {isLoading ? (
                   <p className="text-center text-gray-500">Loading notifications...</p>
                 ) : error ? (
                   <p className="text-center text-red-500">{error}</p>
                 ) : filteredNotifications.length === 0 ? (
-              <p className="text-center text-gray-500">No notifications found.</p>
-            ) : (
-              filteredNotifications.map((notification, index) => (
-                <NotificationCard
-                  key={index}
+                  <p className="text-center text-gray-500">No notifications found.</p>
+                ) : (
+                  filteredNotifications.map((notification, index) => (
+                    <NotificationCard
+                      key={index}
                       appName={notification.App_type}
                       sender={notification.Sender_email}
-                  subject={notification.subject}
-                  preview={notification.preview}
+                      subject={notification.subject}
+                      preview={notification.preview}
                       date={new Date(notification.date_Created).toLocaleDateString()}
                       department={notification.notification_type}
-                  isRead={notification.isRead}
+                      isRead={notification.isRead}
                       onClick={() => setSelectedNotification(notification)}
                       isSent={false}
                       recipients={[]}
-                />
-              ))
-            )}
-          </div>
-            </>
-          ) : view === "sent" ? (
-            <div className="flex flex-col items-center w-full pt-8">
-              <div className="w-full max-w-4xl px-4">
-                <h2 className="text-2xl font-semibold mb-6 text-center">Sent Notifications</h2>
-                {isLoading ? (
-                  <p className="text-center text-gray-500">Loading sent notifications...</p>
-                ) : error ? (
-                  <p className="text-center text-red-500">{error}</p>
-                ) : filteredNotifications.length === 0 ? (
-                  <p className="text-center text-gray-500">No sent notifications found.</p>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {filteredNotifications.map((notification, index) => (
-                      <NotificationCard
-                        key={index}
-                        appName={notification.App_type}
-                        sender={notification.Sender_email}
-                        subject={notification.subject}
-                        preview={notification.preview}
-                        date={new Date(notification.date_Created).toLocaleDateString()}
-                        department={notification.notification_type}
-                        isRead={notification.isRead}
-                        onClick={() => setSelectedNotification(notification)}
-                        isSent={true}
-                        recipients={notification.sent_to || []}
-                      />
-                    ))}
-                  </div>
+                    />
+                  ))
                 )}
               </div>
-            </div>
+            </>
+          ) : view === "sent" ? (
+            <>
+              {/* Sent Notifications */}
+              <div className="flex flex-col items-center w-full pt-8">
+                <div className="w-full max-w-4xl px-4">
+                  <h2 className="text-2xl font-semibold mb-6 text-center">Sent Notifications</h2>
+                  {isLoading ? (
+                    <p className="text-center text-gray-500">Loading sent notifications...</p>
+                  ) : error ? (
+                    <p className="text-center text-red-500">{error}</p>
+                  ) : filteredNotifications.length === 0 ? (
+                    <p className="text-center text-gray-500">No sent notifications found.</p>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {filteredNotifications.map((notification, index) => (
+                        <NotificationCard
+                          key={index}
+                          appName={notification.App_type}
+                          sender={notification.Sender_email}
+                          subject={notification.subject}
+                          preview={notification.preview}
+                          date={new Date(notification.date_Created).toLocaleDateString()}
+                          department={notification.notification_type}
+                          isRead={notification.isRead}
+                          onClick={() => setSelectedNotification(notification)}
+                          isSent={true}
+                          recipients={notification.sent_to || []}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : view === "drafts" ? (
+            <>
+              {/* Draft Notifications */}
+              <div className="flex flex-col items-center w-full pt-8">
+                <div className="w-full max-w-4xl px-4">
+                  <h2 className="text-2xl font-semibold mb-6 text-center">Draft Notifications</h2>
+                  {isLoading ? (
+                    <p className="text-center text-gray-500">Loading draft notifications...</p>
+                  ) : error ? (
+                    <p className="text-center text-red-500">{error}</p>
+                  ) : notifications.filter((n) => n.is_Drafted === true).length === 0 ? (
+                    <p className="text-center text-gray-500">No draft notifications found.</p>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {notifications
+                        .filter((n) => n.is_Drafted === true)
+                        .map((notification, index) => (
+                          <NotificationCard
+                            key={index}
+                            appName={notification.App_type}
+                            sender={notification.Sender_email}
+                            subject={notification.subject}
+                            preview={notification.details?.body || notification.details?.details || notification.details?.description || "No preview available"}
+                            date={new Date(notification.date_Created).toLocaleDateString()}
+                            department={notification.notification_type}
+                            isRead={notification.is_Read}
+                            onClick={() => setSelectedNotification(notification)}
+                            isSent={false}
+                            recipients={[]}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
-              <h2 className="text-2xl font-semibold mb-4">Drafts</h2>
-              <p className="text-gray-500">Your draft notifications will appear here.</p>
+              <h2 className="text-2xl font-semibold mb-4">No view selected</h2>
+              <p className="text-gray-500">Please select Inbox, Sent, or Drafts.</p>
             </div>
           )}
         </>
       )}
     </section>
-  );
-};
+  )};
