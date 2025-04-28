@@ -120,12 +120,12 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <div
-    onClick={onClick}
-    className={`flex items-center justify-between px-4 py-3 rounded-xl border border-stone-300 dark:border-gray-700 cursor-pointer transition-all
-      ${isRead 
-        ? "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" 
-        : "bg-fuchsia-50 dark:bg-gray-800 hover:bg-fuchsia-100 dark:hover:bg-gray-700"
-      }`}
+      onClick={onClick}
+      className={`flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-all
+        ${isRead 
+          ? "bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 opacity-75" 
+          : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium"
+        }`}
     >
       <div className="flex items-center flex-1">
         <div className="flex items-center px-2">
@@ -133,14 +133,14 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
         {/* Left side: text info */}
         <div className="flex flex-col px-2 flex-1">
-          <span className="text-sm text-zinc-600 dark:text-zinc-300">
+          <span className={`text-sm ${isRead ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}>
             {isSent ? formatRecipients() : `${sender} • ${department}`}
           </span>
-          <span className={`text-base ${isRead ? "font-normal" : "font-bold"} text-zinc-900 dark:text-zinc-100`}>
+          <span className={`text-base ${isRead ? "text-gray-500 dark:text-gray-400" : "text-gray-900 dark:text-gray-100 font-semibold"}`}>
             {subject}
           </span>
           {!isSent && (
-            <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[300px]">
+            <span className={`text-sm ${isRead ? "text-gray-400 dark:text-gray-500" : "text-gray-600 dark:text-gray-400"}`}>
               {preview}
             </span>
           )}
@@ -149,11 +149,11 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
       {/* Right side: timestamp and logo */}
       <div className="flex items-center gap-4 ml-4">
-        <span className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{date}</span>
+        <span className={`text-sm ${isRead ? "text-gray-400 dark:text-gray-500" : "text-gray-500 dark:text-gray-400"}`}>{date}</span>
         <img
           src={mounted && theme === "light" ? "/DP_Logo_Black.png" : "/DP_Logo_White.png"}
           alt="DuckPond Logo"
-          className="w-10 h-10"
+          className={`w-10 h-10 ${isRead ? "opacity-50" : ""}`}
         />
       </div>
     </div>
