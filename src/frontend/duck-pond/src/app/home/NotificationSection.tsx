@@ -298,7 +298,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
               </div>
   
               {/* Inbox Notifications */}
-              <div className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden max-h-[600px] px-4">
+              <div className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden max-h-[68vh] px-4">
                 {isLoading ? (
                   <p className="text-center text-gray-500">Loading notifications...</p>
                 ) : error ? (
@@ -328,9 +328,9 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
           ) : view === "sent" ? (
             <>
               {/* Sent Notifications */}
-              <div className="flex flex-col items-center w-full pt-8">
+              <div className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden max-h-[78vh] px-4">
                 <div className="w-full max-w-4xl px-4">
-                  <h2 className="text-2xl font-semibold mb-6 text-center">Sent Notifications</h2>
+                  <h2 className="text-2xl font-semibold mb-6 text-center sticky top-0 z-10 py-4">Sent Notifications</h2>
                   {isLoading ? (
                     <p className="text-center text-gray-500">Loading sent notifications...</p>
                   ) : error ? (
