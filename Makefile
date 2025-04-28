@@ -4,3 +4,5 @@ start_backend:
 start_frontend:
 	cd src/frontend/duck-pond && npm run dev
 
+start_ai:
+	cd src/backend && python flask_server.py
