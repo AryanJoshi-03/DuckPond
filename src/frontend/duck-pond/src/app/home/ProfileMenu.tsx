@@ -73,13 +73,6 @@ export const ProfileMenu: React.FC = () => {
           >
             Settings
           </button>
-
-          <button
-            className="px-3 py-2 cursor-pointer text-left hover:bg-gray-200 dark:hover:bg-gray-700"
-            role="menuitem"
-          >
-            Switch User
-          </button>
           <SignOutButton />
         </nav>
       </div>
