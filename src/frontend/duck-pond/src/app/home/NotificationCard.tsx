@@ -120,8 +120,12 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <div
-      onClick={onClick}
-      className="flex items-center justify-between bg-fuchsia-50 dark:bg-gray-800 px-4 py-3 rounded-xl border border-stone-300 dark:border-gray-700 cursor-pointer hover:bg-fuchsia-100 dark:hover:bg-gray-700 transition-all"
+    onClick={onClick}
+    className={`flex items-center justify-between px-4 py-3 rounded-xl border border-stone-300 dark:border-gray-700 cursor-pointer transition-all
+      ${isRead 
+        ? "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" 
+        : "bg-fuchsia-50 dark:bg-gray-800 hover:bg-fuchsia-100 dark:hover:bg-gray-700"
+      }`}
     >
       <div className="flex items-center flex-1">
         <div className="flex items-center px-2">
