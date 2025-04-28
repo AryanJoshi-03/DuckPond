@@ -23,6 +23,8 @@ from bson import ObjectId
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 
+
+
 client = MongoClient(MONGO_URI)
 db = client["notifications"]
 notifications_collection = db["notifications"]
@@ -358,6 +360,7 @@ def loginUser(user: UserLogin):
         # Generate JWT token
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         # Return user data and token
+
         return {
             "message": "Login successful.",
             "token": token,

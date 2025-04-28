@@ -150,11 +150,13 @@ export async function signInUserAction(prevState: any, formData: FormData) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(loginData),
+      credentials: "include" // <<< ADD THIS
     });
 
     const responseData = await response.json();
 
     if (!response.ok) {
+      console.log("1")
       return {
         ...prevState,
         data: "bad",
@@ -164,6 +166,7 @@ export async function signInUserAction(prevState: any, formData: FormData) {
     }
 
     // Return success with token and redirect flag
+    console.log("2")
     return {
       ...prevState,
       data: "ok",
@@ -173,6 +176,7 @@ export async function signInUserAction(prevState: any, formData: FormData) {
     };
     
   } catch (error) {
+    console.log("3")
     return {
       ...prevState,
       data: "bad",
