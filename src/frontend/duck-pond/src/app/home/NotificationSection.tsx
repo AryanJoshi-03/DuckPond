@@ -306,21 +306,23 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                 ) : filteredNotifications.length === 0 ? (
                   <p className="text-center text-gray-500">No notifications found.</p>
                 ) : (
-                  filteredNotifications.map((notification, index) => (
-                    <NotificationCard
-                      key={index}
-                      appName={notification.App_type}
-                      sender={notification.Sender_email}
-                      subject={notification.subject}
-                      preview={notification.preview}
-                      date={new Date(notification.date_Created).toLocaleDateString()}
-                      department={notification.notification_type}
-                      isRead={notification.isRead}
-                      onClick={() => setSelectedNotification(notification)}
-                      isSent={false}
-                      recipients={[]}
-                    />
-                  ))
+                  <div className="flex flex-col gap-4">
+                    {[...filteredNotifications].reverse().map((notification, index) => (
+                      <NotificationCard
+                        key={index}
+                        appName={notification.App_type}
+                        sender={notification.Sender_email}
+                        subject={notification.subject}
+                        preview={notification.preview}
+                        date={new Date(notification.date_Created).toLocaleDateString()}
+                        department={notification.notification_type}
+                        isRead={notification.isRead}
+                        onClick={() => setSelectedNotification(notification)}
+                        isSent={false}
+                        recipients={[]}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
 
