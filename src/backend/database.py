@@ -284,15 +284,11 @@ def soft_delete_Notif(notification_id:int):
 
 
 # Mark notification as read
-@app.patch(
-    "/notifications/{notification_id}/read",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Idempotently mark a notification as read"
-)
+@app.patch("/notifications/{notification_id}/read",status_code=status.HTTP_204_NO_CONTENT,summary="Idempotently mark a notification as read")
 def mark_notification_as_read(notification_id: int):
     # This filter matches only active notifications;
     # if none match, update_one will do nothing but not error.
-    app.mongodb.notifications_collection.update_one(
+    notifications_collection.update_one(
         {"notification_id": notification_id, "is_Active": True},
         {"$set": {"is_Read": True}}
     )
