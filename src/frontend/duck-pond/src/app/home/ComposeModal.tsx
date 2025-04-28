@@ -240,10 +240,81 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
     }
   };
 
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotMessages, setCopilotMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [copilotInput, setCopilotInput] = useState("");
+  const [typingMessage, setTypingMessage] = useState("");
+
+
+  const typeWriterEffect = (fullText: string) => {
+    let index = 0;
+    const typingSpeed = 30; // ms
+  
+    setTypingMessage(""); // Clear any old typing
+  
+    const interval = setInterval(() => {
+      setTypingMessage(fullText.slice(0, index + 1));
+  
+      index++;
+  
+      if (index >= fullText.length) {
+        clearInterval(interval);
+  
+        // After typing is done, move final built message into copilotMessages
+        setCopilotMessages(prev => [...prev, { role: "assistant", content: fullText }]);
+        setTypingMessage(""); // Clear temporary typing message
+      }
+    }, typingSpeed);
+  };
+  
+   
+
+  const handleSendMessage = async () => {
+    if (copilotInput.trim() === "") return;
+  
+    try {
+      // 1. Show user's message immediately
+      setCopilotMessages((prev) => [...prev, { role: "user", content: copilotInput }]);
+  
+      const userInput = copilotInput; // Save it safely
+      setCopilotInput(""); // Clear input field
+  
+      // 2. Send the message to Flask server
+      const response = await fetch("http://localhost:5000/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: userInput }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        const aiResponse = data.response;
+  
+        // 3. Add AI's full response immediately
+        // setCopilotMessages((prev) => [...prev, { role: "assistant", content: aiResponse }]);
+        // 3. typerwriter
+        typeWriterEffect(aiResponse);
+      } else {
+        console.error("API error:", data.error);
+        alert("Failed to generate email.");
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Something went wrong. Please try again.");
+    }
+  };
+  
+  
+  
+  
+
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-[#F5EFFF] rounded-xl p-6 w-[80%] h-[80%] shadow-lg relative flex flex-col gap-4 overflow-y-auto">
-        {/* Close Button */}
+      <div className={`bg-[#F5EFFF] rounded-xl p-6 ${copilotOpen ? "w-[70%]" : "w-[80%]"} h-[80%] shadow-lg relative flex flex-col gap-4 overflow-y-auto transition-all duration-300`}>
+      {/* Close Button */}
         <button className="absolute top-4 right-4 text-gray-500 hover:text-black" onClick={onClose}>
           ✕
         </button>
@@ -347,12 +418,75 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
             >
               Save Draft
             </button>
-          </div>
-          <button className="bg-dcpurple text-white py-1 px-4 rounded-full">
-            Copilot ✨
-          </button>
+          </div> 
+            <button 
+            className="bg-dcpurple text-white py-1 px-4 rounded-full" 
+            onClick={() => setCopilotOpen(true)}
+            >
+              Copilot ✨
+            </button>
+   
         </div>
       </div>
+
+        {copilotOpen && (
+        <div className="bg-white h-full w-[30%] rounded-xl ml-4 flex flex-col shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="text-xl font-semibold">Copilot ✨</h3>
+            <button onClick={() => setCopilotOpen(false)} className="text-gray-500 hover:text-black">
+              ✕
+            </button>
+          </div>
+
+          {/* Chat messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col">
+          {copilotMessages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`rounded-lg p-2 max-w-[80%] ${
+                msg.role === "user" ? "bg-blue-100 self-end" : "bg-gray-200 self-start"
+              }`}
+            >
+              {msg.content}
+            </div>
+          ))}
+
+          {typingMessage && (
+            <div className="rounded-lg p-2 max-w-[80%] bg-gray-200 self-start">
+              {typingMessage}
+            </div>
+          )}
+        </div>
+
+
+
+          {/* Input */}
+          <div className="p-4 border-t flex gap-2">
+            <input
+              type="text"
+              value={copilotInput}
+              onChange={(e) => setCopilotInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSendMessage();
+                }
+              }}
+              className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-black"
+              placeholder="Type a message..."
+            />
+            <button 
+              onClick={handleSendMessage} 
+              className="bg-dcpurple text-white rounded-full px-4 py-2"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
+
+
+
     </div>
   );
 };
