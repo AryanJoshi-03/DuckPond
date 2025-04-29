@@ -80,4 +80,5 @@ const NotifContent: React.FC<NotifContentProps> = ({ notification, onClose }) =>
     );
 };
 
+
 export default NotifContent;
