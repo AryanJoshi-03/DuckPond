@@ -25,7 +25,9 @@ def generate_email():
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert email assistant. You should only respond in the form of an email, and nothing else. You cannot talking about anything else other than things related to writing an email."},
+                {"role": "system", "content": "You are an expert email assistant. "
+                "You should only respond in the form of an email, and nothing else. "
+                "You cannot talking about anything else other than things related to writing an email."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
