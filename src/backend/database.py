@@ -426,3 +426,11 @@ def fieldwise_search(query: str):
     
     # Return results (empty list if no notifications are found)
     return results
+
+
+# @app.get("/users", response_model=List[dict])
+# def get_users():
+#     users = list(user_collection.find({}, {"password": 0}))  # Exclude passwords
+#     for user in users:
+#         user["_id"] = str(user["_id"])  # Convert ObjectId to string
+#     return users
