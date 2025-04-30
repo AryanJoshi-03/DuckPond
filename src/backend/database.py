@@ -430,7 +430,5 @@ def fieldwise_search(query: str):
 
 @app.get("/users", response_model=List[dict])
 def get_users():
-    users = list(user_collection.find({}, {"password": 0}))  # Exclude passwords
-    for user in users:
-        user["_id"] = str(user["_id"])  # Convert ObjectId to string
-    return users
+    users = list(user_collection.find({}, {"password": 0}))
+    return [{"user_id": str(user["_id"]), "email": user["email"], "username": user["username"]} for user in users]
