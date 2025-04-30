@@ -346,7 +346,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                   ) : filteredNotifications.length === 0 ? (
                     <p className="text-center text-gray-500">No sent notifications found.</p>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: "600px" }}>
                       {filteredNotifications.map((notification, index) => (
                         <NotificationCard
                           key={index}
@@ -380,7 +380,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                   ) : notifications.filter((n) => n.is_Drafted === true).length === 0 ? (
                     <p className="text-center text-gray-500">No draft notifications found.</p>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: "600px" }}>
                       {notifications
                         .filter((n) => n.is_Drafted === true)
                         .map((notification, index) => (

@@ -19,6 +19,28 @@ const UserSelect: React.FC<UserSelectProps> = ({ selectedUsers, onUserSelect }) 
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Initialize selectedEmails based on selectedUsers
+  useEffect(() => {
+    const fetchSelectedUsers = async () => {
+      if (selectedUsers.length > 0) {
+        try {
+          const response = await fetch('http://127.0.0.1:8000/users');
+          if (response.ok) {
+            const allUsers = await response.json();
+            const selectedUserEmails = allUsers
+              .filter((user: User) => selectedUsers.includes(user.user_id))
+              .map((user: User) => user.email);
+            setSelectedEmails(selectedUserEmails);
+          }
+        } catch (error) {
+          console.error('Error fetching selected users:', error);
+        }
+      }
+    };
+
+    fetchSelectedUsers();
+  }, [selectedUsers]);
+
   // Fetch users from the backend
   useEffect(() => {
     const fetchUsers = async () => {
