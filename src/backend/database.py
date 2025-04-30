@@ -427,3 +427,8 @@ def fieldwise_search(query: str):
     # Return results (empty list if no notifications are found)
     return results
 
+
+@app.get("/users", response_model=List[dict])
+def get_users():
+    users = list(user_collection.find({}, {"password": 0}))
+    return [{"user_id": str(user["_id"]), "email": user["email"], "username": user["username"]} for user in users]
