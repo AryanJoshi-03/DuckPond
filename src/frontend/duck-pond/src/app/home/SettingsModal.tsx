@@ -1,15 +1,14 @@
 "use client";
 import * as React from "react";
 import { Dialog } from "@headlessui/react";
-
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 const tabs = [
-  "Notifications",
-  "Appearance",
   "Account & Privacy",
   "Preferences",
   "Accessibility",
@@ -17,15 +16,134 @@ const tabs = [
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = React.useState(tabs[0]);
+  const { user } = useAuth();
+
+  const [currentPassword, setCurrentPassword] = React.useState("");
+  const [newPassword, setNewPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [feedbackMessage, setFeedbackMessage] = React.useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
+  const router = useRouter();
+
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+  
+    if (newPassword !== confirmPassword) {
+      setErrorMessage("New passwords do not match.");
+      return;
+    }
+  
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/users/${user.id}/change-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        setErrorMessage(data.detail || "Failed to update password.");
+      } else {
+        setFeedbackMessage(data.message);
+        setErrorMessage(null);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err) {
+      setErrorMessage("Server error. Please try again.");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/users/${user.id}/delete-account`, {
+        method: "DELETE",
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        setErrorMessage(data.detail || "Failed to delete account.");
+      } else {
+        setFeedbackMessage(data.message);
+        router.push("/signin");
+        // Optional: redirect or logout user here
+      }
+    } catch (err) {
+      setErrorMessage("Server error. Please try again.");
+    }
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "Notifications":
-        return <p className="text-zinc-300">Notification settings go here.</p>;
-      case "Appearance":
-        return <p className="text-zinc-300">Appearance settings go here.</p>;
       case "Account & Privacy":
-        return <p className="text-zinc-300">Account and privacy options go here.</p>;
+        return (
+          <div className="space-y-6">
+            {/* Change Password Section */}
+            <form className="space-y-3" onSubmit={handlePasswordUpdate}>
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-dcpurple"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-dcpurple"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-dcpurple"
+                />
+              </div>
+              {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+              {feedbackMessage && <p className="text-green-400 text-sm">{feedbackMessage}</p>}
+              <button
+                type="submit"
+                className="mt-2 px-4 py-2 bg-dcpurple text-white rounded-md hover:bg-purple-700 transition"
+              >
+                Update Password
+              </button>
+            </form>
+        
+            {/* Delete Account Section */}
+            <div className="bg-zinc-800 p-4 rounded-xl shadow mt-8">
+              <h3 className="text-lg font-semibold mb-2 text-red-400">Delete Account</h3>
+              <p className="text-zinc-400 mb-3">
+                Deleting your account is permanent and cannot be undone. All your data will be lost.
+              </p>
+              {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+              {feedbackMessage && <p className="text-green-400 text-sm">{feedbackMessage}</p>}
+              <button
+                onClick={() => setConfirmOpen(true)}
+                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+              >
+                Delete My Account
+              </button>
+            </div>
+          </div>
+
+        );
       case "Preferences":
         return <p className="text-zinc-300">User preferences go here.</p>;
       case "Accessibility":
@@ -36,6 +154,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   return (
+    
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
 
@@ -78,6 +197,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
         </Dialog.Panel>
       </div>
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="max-w-md w-full bg-zinc-900 rounded-xl p-6 text-white shadow-lg">
+            <Dialog.Title className="text-lg font-bold mb-2">Confirm Deletion</Dialog.Title>
+            <p className="text-sm text-zinc-300 mb-4">
+              Are you sure you want to delete your account? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="px-4 py-2 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmOpen(false);
+                  handleDeleteAccount();
+                }}
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </Dialog>
   );
 };

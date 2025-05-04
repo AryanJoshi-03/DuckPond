@@ -432,3 +432,34 @@ def fieldwise_search(query: str):
 def get_users():
     users = list(user_collection.find({}, {"password": 0}))
     return [{"user_id": str(user["_id"]), "email": user["email"], "username": user["username"]} for user in users]
+
+from fastapi import Body
+
+
+#delete account and change password
+@app.post("/users/{user_id}/change-password")
+def change_password(user_id: str, current_password: str = Body(...), new_password: str = Body(...)):
+    user = user_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not bcrypt.checkpw(current_password.encode('utf-8'), user['password']):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+
+    new_hashed_pw = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+    user_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"password": new_hashed_pw}}
+    )
+
+    return {"message": "Password updated successfully"}
+
+
+@app.delete("/users/{user_id}/delete-account")
+def delete_account(user_id: str):
+    res = user_collection.delete_one({"_id": ObjectId(user_id)})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found or already deleted")
+    
+    # Optional: Also delete or deactivate related notifications here
+    return {"message": "Account deleted successfully"}
