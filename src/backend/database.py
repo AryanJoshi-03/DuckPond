@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from uuid import uuid4
 
 import bcrypt
-
+import traceback
 
 from fastapi import Query
 from pymongo import ASCENDING, DESCENDING
@@ -183,6 +183,55 @@ def get_sent_notification_user(user_id: str):
         # Log the error and return an empty list
         print(f"Error in get_sent_notification_user: {str(e)}")
         return []
+    
+#68056825f8e85224148070e1 jdoes account number
+@app.get("/create_notifications")
+def create_notification():
+    try:
+        print("Creating mock notifications...")
+
+        # Template notification
+        template = BaseNotification(
+            notification_id=0,  # Will be replaced
+            Sender_id="68056b576414fd044d0cb829",
+            Sender_email="ganderson@umass.edu",
+            App_type="DuckPond",
+            is_Read=False,
+            is_Archived=False,
+            is_Drafted=False,
+            is_Active=True,
+            date_Created=datetime.now(),
+            subject="Test Notification",
+            notification_type="policy",
+            flag="important",
+            details={}
+        )
+
+        mock_notifications = []
+        user_notifications = []
+
+        for i in range(1000):
+            notif_data = template.model_dump()
+            notif_data["notification_id"] = uuid4().int >> 96
+            notif_data["subject"] = f"Mock Notification {i + 1}"
+            notif_data["details"] = {
+                "policy_id": f"{i + 1}",
+                "body": f"This is mock notification {i + 1}"
+            }
+            mock_notifications.append(notif_data)
+            user_notifications.append({
+                "notification_id": notif_data["notification_id"],
+                "user_id": "68056825f8e85224148070e1"
+            })
+
+        notifications_collection.insert_many(mock_notifications)
+        userNotifications_collection.insert_many(user_notifications)
+
+        return {"message": f"{len(mock_notifications)} mock notifications added successfully"}
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error creating mock notifications: {str(e)}")
 
 #Create a notification depending on type
 @app.post("/notifications/{notification_type}")
@@ -281,7 +330,6 @@ def soft_delete_Notif(notification_id:int):
     if res.matched_count == 0:
         raise HTTPException(status_code=404,detail="Notification not found")
     return {"Message" :"Notification deleted successfully"}
-
 
 # Mark notification as read
 @app.patch("/notifications/{notification_id}/read",status_code=status.HTTP_204_NO_CONTENT,summary="Idempotently mark a notification as read")
