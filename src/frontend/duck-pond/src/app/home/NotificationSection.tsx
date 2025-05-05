@@ -43,7 +43,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
   const [query, setQuery] = React.useState("");
   const dropdownRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  const filterButtons = ["App", "Dept.", "Time", "Flags", "Read"] as const;
+  const filterButtons = ["Dept.", "Time", "Flags", "Read"] as const;
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
   const [selectedItems, setSelectedItems] = React.useState<{
     [key: string]: string[];
@@ -146,8 +146,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
   };
 
   const dropdownItems = {
-    App: ["Duck Creek", "Gmail", "Slack", "SMS", "Twitter"],
-    "Dept.": ["Policy", "Claims", "Payment", "General", "News"],
+    "Dept.": ["Policy", "Claims", "News"],
     Time: ["Last Hour", "Last Day", "Last Week"],
     Flags: ["Important", "Urgent", "Normal"],
     Read: ["Read", "Unread"],
@@ -155,34 +154,46 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
 
   const mapToDisplayFormat = (notification: any) => {
     if (!notification) return null;
-    
+  
     const formatDate = (isoDate: string) => {
       if (!isoDate) return "No date";
       const date = new Date(isoDate);
       return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     };
-
+  
+    const calculateTimeCategory = (isoDate: string) => {
+      if (!isoDate) return "Unknown";
+      const notificationDate = new Date(isoDate);
+      const now = new Date();
+      const diffInMs = now.getTime() - notificationDate.getTime();
+      const diffInHours = diffInMs / (1000 * 60 * 60);
+  
+      if (diffInHours <= 1 ) return "Last Hour";
+      if (diffInHours <= 24) return "Last Day";
+      if (diffInHours <= 168) return "Last Week"; // 7 days * 24 hours
+      return "Older";
+    };
+  
     let common = {
       appName: (notification.App_type || "DuckPond").toLowerCase(),
-      time: "Last Day",
+      time: calculateTimeCategory(notification.date_Created), // Dynamically calculate time
       flag: "Important",
       read: notification.is_Read ? "Read" : "Unread",
     };
-
-    // Create a basic notification object with default values
+  
     let formattedNotification = {
       ...notification,
-        ...common,
+      ...common,
       sender: notification.Sender_id || "System",
       subject: notification.subject || "No Subject",
       preview: "",
-        date: formatDate(notification.date_Created),
+      date: formatDate(notification.date_Created),
       department: (notification.notification_type || "General").toLowerCase(),
       dept: (notification.notification_type || "General").toLowerCase(),
       isRead: notification.is_Read || false,
       recipients: notification.sent_to || [],
-      };
-    
+    };
+  
     // Add preview based on notification type
     if (notification.notification_type === "policy" && notification.details && notification.details.body) {
       formattedNotification.preview = notification.details.body;
@@ -193,40 +204,19 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     } else {
       formattedNotification.preview = "No preview available";
     }
-    
+  
     // For sent notifications, add information about recipients
     if (notification.sent_to && Array.isArray(notification.sent_to)) {
       formattedNotification.preview = `Sent to ${notification.sent_to.length} recipient(s)`;
     }
-
+  
     return formattedNotification;
   };
-
-  // let filteredNotifications = notifications
-  //   .map(mapToDisplayFormat)
-  //   .filter((notification): notification is NonNullable<typeof notification> => {
-  //     if (!notification) return false;
-  //     return (
-  //       (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
-  //       (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
-  //       (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => item.toLowerCase() === notification.time.toLowerCase())) &&
-  //       (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
-  //       (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()))
-  //     );
-  //   });
-
-  //   // Combine with search results
-  //   filteredNotifications =
-  //   searchResults.length > 0 || query.trim() !== ""
-  //     ? filteredNotifications.filter(notification =>
-  //         searchResults.some(result => result.notification_id === notification.notification_id)
-  //       )
-  //     : filteredNotifications;
 
   const filteredNotifications = notifications
   .filter((n) => {
     if (view === "inbox" || view === "sent") {
-      return n.is_Drafted !== true;  // 🚨 only include non-drafts in inbox/sent
+      return n.is_Drafted !== true; // Only include non-drafts in inbox/sent
     }
     return true; // For drafts view, keep all
   })
@@ -235,9 +225,14 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     if (!notification) return false;
 
     const matchesFilters =
-      (selectedItems["App"].length === 0 || selectedItems["App"].some(item => item.toLowerCase() === notification.appName)) &&
       (selectedItems["Dept."].length === 0 || selectedItems["Dept."].some(item => item.toLowerCase() === notification.dept)) &&
-      (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => item.toLowerCase() === notification.time.toLowerCase())) &&
+      (selectedItems["Time"].length === 0 || selectedItems["Time"].some(item => {
+        // Allow broader time categories
+        if (item === "Last Week") return ["Last Hour", "Last Day", "Last Week"].includes(notification.time);
+        if (item === "Last Day") return ["Last Hour", "Last Day"].includes(notification.time);
+        if (item === "Last Hour") return notification.time === "Last Hour";
+        return false;
+      })) &&
       (selectedItems["Flags"].length === 0 || selectedItems["Flags"].some(item => item.toLowerCase() === notification.flag.toLowerCase())) &&
       (selectedItems["Read"].length === 0 || selectedItems["Read"].some(item => item.toLowerCase() === notification.read.toLowerCase()));
 
@@ -412,4 +407,5 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
         </>
       )}
     </section>
-  )};
+  );
+};
