@@ -2,6 +2,7 @@
 import * as React from "react";
 import { NotificationCard } from "./NotificationCard";
 import NotifContent from "./NotifContent";
+import ComposeModal from "./ComposeModal";
 
 import { SearchBar } from "@/app/home/SearchBar";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,14 +34,44 @@ const Dropdown: React.FC<{
   );
 };
 
+interface Notification {
+  notification_id: number;
+  Sender_id: string;
+  Sender_email: string;
+  App_type: string;
+  is_Read: boolean;
+  is_Archived: boolean;
+  is_Drafted: boolean;
+  date_Created: string;
+  subject: string;
+  notification_type: string;
+  flag: string;
+  details: {
+    body?: string;
+    details?: string;
+    description?: string;
+    policy_id?: number;
+    expiration_Date?: string;
+    type?: string;
+    insured_Name?: string;
+    claimant_Name?: string;
+    task_Type?: string;
+    due_Date?: string;
+    line_Business?: string;
+  };
+  sent_to?: string[];
+}
+
 interface NotificationSectionProps {
   view: "inbox" | "sent" | "drafts";
 }
 
 export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }) => {
-  const { user, loading, isAuthenticated } = useAuth();
-  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const { user } = useAuth();
+  const [searchResults, setSearchResults] = React.useState<Notification[]>([]);
   const [query, setQuery] = React.useState("");
+  const [showComposeModal, setShowComposeModal] = React.useState(false);
+  const [selectedDraft, setSelectedDraft] = React.useState<Notification | null>(null);
   const dropdownRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const filterButtons = ["Dept.", "Time", "Flags", "Read"] as const;
@@ -54,8 +85,8 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     Flags: [],
     Read: [],
   });
-  const [selectedNotification, setSelectedNotification] = React.useState<any | null>(null);
-  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const [selectedNotification, setSelectedNotification] = React.useState<Notification | null>(null);
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   
@@ -145,14 +176,14 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
     }));
   };
 
-  const dropdownItems = {
+  const dropdownItems: Record<string, string[]> = {
     "Dept.": ["Policy", "Claims", "News"],
     Time: ["Last Hour", "Last Day", "Last Week"],
-    Flags: ["Important", "Urgent", "Normal"],
+    Flags: ["Important", "Normal", "Info"],
     Read: ["Read", "Unread"],
   };
 
-  const mapToDisplayFormat = (notification: any) => {
+  const mapToDisplayFormat = (notification: Notification) => {
     if (!notification) return null;
   
     const formatDate = (isoDate: string) => {
@@ -174,14 +205,14 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
       return "Older";
     };
   
-    let common = {
+    const common = {
       appName: (notification.App_type || "DuckPond").toLowerCase(),
-      time: calculateTimeCategory(notification.date_Created), // Dynamically calculate time
-      flag: "Important",
+      time: calculateTimeCategory(notification.date_Created),
+      flag: notification.flag || "normal",
       read: notification.is_Read ? "Read" : "Unread",
     };
   
-    let formattedNotification = {
+    const formattedNotification = {
       ...notification,
       ...common,
       sender: notification.Sender_id || "System",
@@ -246,6 +277,29 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
   console.log("Current view:", view);
   console.log("Filtered notifications:", filteredNotifications);
 
+  const handleDraftClick = (notification: Notification) => {
+    // Extract draft data from the notification
+    const draftData = {
+      notificationType: notification.notification_type,
+      title: notification.subject,
+      body: notification.details?.body || "",
+      policyId: notification.details?.policy_id?.toString() || "",
+      expirationDate: notification.details?.expiration_Date || "",
+      type: notification.details?.type || "",
+      newsdetails: notification.details?.details || "",
+      insuredName: notification.details?.insured_Name || "",
+      claimantName: notification.details?.claimant_Name || "",
+      taskType: notification.details?.task_Type || "",
+      dueDate: notification.details?.due_Date || "",
+      lineBusiness: notification.details?.line_Business || "",
+      description: notification.details?.description || "",
+      flag: notification.flag || "normal",
+      selectedUsers: notification.sent_to || [],
+    };
+    setSelectedDraft(notification);
+    setShowComposeModal(true);
+  };
+
   return (
     <section className="flex-1 h-full">
       {selectedNotification ? (
@@ -259,7 +313,6 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                 "Content-Type": "application/json",
               },
             })
-
           }}
         />
       ) : (
@@ -323,6 +376,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                       onClick={() => setSelectedNotification(notification)}
                       isSent={false}
                       recipients={[]}
+                      flag={notification.flag}
                     />
                   ))
                 )}
@@ -355,6 +409,7 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                           onClick={() => setSelectedNotification(notification)}
                           isSent={true}
                           recipients={notification.sent_to || []}
+                          flag={notification.flag}
                         />
                       ))}
                     </div>
@@ -388,9 +443,10 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
                             date={new Date(notification.date_Created).toLocaleDateString()}
                             department={notification.notification_type}
                             isRead={notification.is_Read}
-                            onClick={() => setSelectedNotification(notification)}
+                            onClick={() => handleDraftClick(notification)}
                             isSent={false}
                             recipients={[]}
+                            flag={notification.flag}
                           />
                         ))}
                     </div>
@@ -405,6 +461,32 @@ export const NotificationSection: React.FC<NotificationSectionProps> = ({ view }
             </div>
           )}
         </>
+      )}
+
+      {showComposeModal && (
+        <ComposeModal 
+          onClose={() => {
+            setShowComposeModal(false);
+            setSelectedDraft(null);
+          }}
+          draftData={selectedDraft ? {
+            notificationType: selectedDraft.notification_type,
+            title: selectedDraft.subject,
+            body: selectedDraft.details?.body || "",
+            policyId: selectedDraft.details?.policy_id?.toString() || "",
+            expirationDate: selectedDraft.details?.expiration_Date || "",
+            type: selectedDraft.details?.type || "",
+            newsdetails: selectedDraft.details?.details || "",
+            insuredName: selectedDraft.details?.insured_Name || "",
+            claimantName: selectedDraft.details?.claimant_Name || "",
+            taskType: selectedDraft.details?.task_Type || "",
+            dueDate: selectedDraft.details?.due_Date || "",
+            lineBusiness: selectedDraft.details?.line_Business || "",
+            description: selectedDraft.details?.description || "",
+            flag: selectedDraft.flag || "normal",
+            selectedUsers: selectedDraft.sent_to || [],
+          } : undefined}
+        />
       )}
     </section>
   );

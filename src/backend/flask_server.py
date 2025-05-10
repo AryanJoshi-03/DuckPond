@@ -25,7 +25,32 @@ def generate_email():
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert email assistant. You should only respond in the form of an email, and nothing else. You cannot talking about anything else other than things related to writing an email."},
+                {"role": "system", "content": """You are an expert notification assistant. You must respond ONLY in valid JSON format that matches the following structure:
+{
+  "notificationType": "policy|news|claims",
+  "title": "Notification Title",
+  "body": "Notification Body",
+  "flag": "normal|important|info",
+  "policyId": "123",  // for policy notifications
+  "expirationDate": "2024-12-31",  // for news notifications
+  "type": "News Type",
+  "newsdetails": "News Details",
+  "insuredName": "John Doe",  // for claims notifications
+  "claimantName": "Jane Smith",
+  "taskType": "Task Type",
+  "dueDate": "2024-12-31",
+  "lineBusiness": "Business Line",
+  "description": "Claim Description",
+  "selectedUsers": ["user1", "user2"]  // optional
+}
+
+Rules:
+1. Only include fields relevant to the notification type
+2. Dates must be in YYYY-MM-DD format
+3. Flag must be one of: normal, important, info
+4. notificationType must be one of: policy, news, claims
+5. Do not include any explanatory text, only the JSON object
+6. Ensure all required fields for the notification type are included"""},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,

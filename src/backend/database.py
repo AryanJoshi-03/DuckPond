@@ -83,7 +83,7 @@ class BaseNotification(BaseModel):
     date_Created:datetime
     subject:str
     notification_type:str
-    flag:str
+    flag:str = Field(default="normal", pattern="^(important|normal|info)$")
     details: Union[PolicyNotification, NewsNotification, ClaimsNotification]
     
 class UserCreate(BaseModel):
@@ -188,35 +188,113 @@ def get_sent_notification_user(user_id: str):
 @app.get("/create_notifications")
 def create_notification():
     try:
-        print("Creating mock notifications...")
+        print("Creating realistic mock notifications...")
 
-        # Template notification
-        template = BaseNotification(
-            notification_id=0,  # Will be replaced
-            Sender_id="68056b576414fd044d0cb829",
-            Sender_email="ganderson@umass.edu",
-            App_type="DuckPond",
-            is_Read=False,
-            is_Archived=False,
-            is_Drafted=False,
-            is_Active=True,
-            date_Created=datetime.now(),
-            subject="Test Notification",
-            notification_type="policy",
-            flag="important",
-            details={}
-        )
+        # Base template for notifications
+        base_template = {
+            "Sender_id": "68056b576414fd044d0cb829",
+            "Sender_email": "ganderson@umass.edu",
+            "App_type": "DuckPond",
+            "is_Read": False,
+            "is_Archived": False,
+            "is_Drafted": False,
+            "is_Active": True,
+            "date_Created": datetime.now()
+        }
 
         mock_notifications = []
         user_notifications = []
 
-        for i in range(1000):
-            notif_data = template.model_dump()
-            notif_data["notification_id"] = uuid4().int >> 96
-            notif_data["subject"] = f"Mock Notification {i + 1}"
-            notif_data["details"] = {
-                "policy_id": f"{i + 1}",
-                "body": f"This is mock notification {i + 1}"
+        # Policy Notifications
+        policy_notifications = [
+            {
+                "subject": "Policy Renewal Due - Auto Insurance",
+                "notification_type": "policy",
+                "flag": "important",
+                "details": {
+                    "policy_id": "POL-2024-001",
+                    "body": "Your auto insurance policy #POL-2024-001 is due for renewal in 15 days. Please review your coverage options and contact your agent to discuss any changes needed.",
+                    "insuredName": "John Smith",
+                    "dueDate": (datetime.now() + timedelta(days=15)).isoformat()
+                }
+            },
+            {
+                "subject": "New Home Insurance Policy Issued",
+                "notification_type": "policy",
+                "flag": "normal",
+                "details": {
+                    "policy_id": "POL-2024-002",
+                    "body": "Your new home insurance policy has been successfully issued. Policy documents are available in your dashboard. Coverage includes: dwelling, personal property, and liability protection.",
+                    "insuredName": "Sarah Johnson"
+                }
+            }
+        ]
+
+        # Claims Notifications
+        claims_notifications = [
+            {
+                "subject": "Auto Claim Filed - Urgent Review Required",
+                "notification_type": "claims",
+                "flag": "important",
+                "details": {
+                    "claimId": "CLM-2024-001",
+                    "insuredName": "Michael Brown",
+                    "claimantName": "David Wilson",
+                    "amount": 5000,
+                    "status": "Pending Review",
+                    "body": "A new auto claim has been filed for policy #POL-2024-003. Accident occurred on Main Street. Please review the claim details and contact the insured within 24 hours.",
+                    "lineBusiness": "Auto",
+                    "dueDate": (datetime.now() + timedelta(days=1)).isoformat()
+                }
+            },
+            {
+                "subject": "Property Damage Claim Update",
+                "notification_type": "claims",
+                "flag": "normal",
+                "details": {
+                    "claimId": "CLM-2024-002",
+                    "insuredName": "Emily Davis",
+                    "amount": 15000,
+                    "status": "Approved",
+                    "body": "The property damage claim for 123 Oak Street has been approved. Settlement check has been issued. Please ensure the insured receives the payment confirmation.",
+                    "lineBusiness": "Property"
+                }
+            }
+        ]
+
+        # News Notifications
+        news_notifications = [
+            {
+                "subject": "New Insurance Regulations Effective Next Month",
+                "notification_type": "news",
+                "flag": "info",
+                "details": {
+                    "title": "Regulatory Update",
+                    "body": "Important update: New insurance regulations will take effect next month. Key changes include updated coverage requirements and modified claim processing procedures. Please review the attached document for compliance requirements.",
+                    "description": "New regulatory requirements for auto and property insurance policies"
+                }
+            },
+            {
+                "subject": "System Maintenance Notice",
+                "notification_type": "news",
+                "flag": "normal",
+                "details": {
+                    "title": "Scheduled Maintenance",
+                    "body": "Scheduled maintenance will occur this weekend. System will be unavailable from 10 PM Saturday to 6 AM Sunday. Please plan your work accordingly.",
+                    "description": "Planned system maintenance notification"
+                }
+            }
+        ]
+
+        # Combine all notifications
+        all_notifications = policy_notifications + claims_notifications + news_notifications
+
+        # Create notifications with unique IDs
+        for notif in all_notifications:
+            notif_data = {
+                **base_template,
+                "notification_id": uuid4().int >> 96,
+                **notif
             }
             mock_notifications.append(notif_data)
             user_notifications.append({
@@ -224,10 +302,11 @@ def create_notification():
                 "user_id": "68056825f8e85224148070e1"
             })
 
+        # Insert into database
         notifications_collection.insert_many(mock_notifications)
         userNotifications_collection.insert_many(user_notifications)
 
-        return {"message": f"{len(mock_notifications)} mock notifications added successfully"}
+        return {"message": f"{len(mock_notifications)} realistic mock notifications added successfully"}
 
     except Exception as e:
         traceback.print_exc()

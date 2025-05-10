@@ -9,9 +9,26 @@ import toast from "react-hot-toast";
 
 interface ComposeModalProps {
   onClose: () => void;
+  draftData?: {
+    notificationType: string;
+    title: string;
+    body: string;
+    policyId: string;
+    expirationDate: string;
+    type: string;
+    newsdetails: string;
+    insuredName: string;
+    claimantName: string;
+    taskType: string;
+    dueDate: string;
+    lineBusiness: string;
+    description: string;
+    flag: string;
+    selectedUsers: string[];
+  };
 }
 
-const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
+const ComposeModal: React.FC<ComposeModalProps> = ({ onClose, draftData }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { user, loading, isAuthenticated } = useAuth();
@@ -21,35 +38,32 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
   }, []);
 
   // === Notification Type State ===
-  const [notificationType, setNotificationType] = useState("");
+  const [notificationType, setNotificationType] = useState(draftData?.notificationType || "");
 
   // === Selected Users State ===
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>(draftData?.selectedUsers || []);
 
   // === Common Fields ===
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-
+  const [title, setTitle] = useState(draftData?.title || "");
+  const [body, setBody] = useState(draftData?.body || "");
 
   // === Policy Fields ===
-  const [policyId, setPolicyId] = useState("");
+  const [policyId, setPolicyId] = useState(draftData?.policyId || "");
 
   // === News Fields ===
-  const [expirationDate, setExpirationDate] = useState("");
-  const [type, setType] = useState("");
-  const [newsdetails, setDetails] = useState("");
+  const [expirationDate, setExpirationDate] = useState(draftData?.expirationDate || "");
+  const [type, setType] = useState(draftData?.type || "");
+  const [newsdetails, setDetails] = useState(draftData?.newsdetails || "");
 
   // === Claims Fields ===
-  const [claimId, setClaimId] = useState("");
-  const [status, setStatus] = useState("");
-  const [amount, setAmount] = useState("");
+  const [insuredName, setInsuredName] = useState(draftData?.insuredName || "");
+  const [claimantName, setClaimantName] = useState(draftData?.claimantName || "");
+  const [taskType, setTaskType] = useState(draftData?.taskType || "");
+  const [dueDate, setDueDate] = useState(draftData?.dueDate || "");
+  const [lineBusiness, setLineBusiness] = useState(draftData?.lineBusiness || "");
+  const [description, setDescription] = useState(draftData?.description || "");
 
-  const [insuredName, setInsuredName] = useState("");
-  const [claimantName, setClaimantName] = useState("");
-  const [taskType, setTaskType] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [lineBusiness, setLineBusiness] = useState("");
-  const [description, setDescription] = useState("");
+  const [flag, setFlag] = useState(draftData?.flag || "normal");
 
   const handleSaveDraft = async () => {
     try {
@@ -60,7 +74,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
   
       let draftNotification: any = {
         Recipient_id: [user?.id], // Save to yourself
-        flag: "none",
+        flag: flag,
         Sender_id: user?.id,
         Sender_email: user?.email,
         is_Drafted: true, // ⭐ SAVE AS DRAFT
@@ -104,7 +118,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
         return;
       }
   
-      const res = await fetch(`http://localhost:8000/notifications/${notificationType}`, {
+      const res = await fetch(`http://127.0.0.1:8000/notifications/${notificationType}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draftNotification),
@@ -135,9 +149,10 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
     
     let notification: any = {
       Recipient_id: selectedUsers,
-      flag: "none",
+      flag: flag,
       Sender_id: user?.id,
       Sender_email: user?.email,
+      is_Drafted: false,
     };
 
     if (notificationType === "claims") {
@@ -218,9 +233,6 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
         setPolicyId("");
         setExpirationDate(""); 
         setDetails("");
-        setClaimId(""); 
-        setStatus(""); 
-        setAmount("");
         setInsuredName("");
         setClaimantName("");
         setTaskType("");
@@ -244,7 +256,29 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
   const [copilotMessages, setCopilotMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [copilotInput, setCopilotInput] = useState("");
   const [typingMessage, setTypingMessage] = useState("");
+  const [lastAIResponse, setLastAIResponse] = useState<any>(null);
+  const [isAISuggested, setIsAISuggested] = useState(false);
+  const [originalFormState, setOriginalFormState] = useState<any>(null);
+  const [defaultFlag, setDefaultFlag] = useState("normal");
 
+  // Load preferences
+  useEffect(() => {
+    const savedDefaultFlag = localStorage.getItem("defaultFlag");
+    if (savedDefaultFlag) {
+      setDefaultFlag(savedDefaultFlag);
+      // Only set the flag if we're not loading a draft
+      if (!draftData) {
+        setFlag(savedDefaultFlag);
+      }
+    }
+  }, [draftData]);
+
+  // Update flag when default flag changes
+  useEffect(() => {
+    if (!draftData) {
+      setFlag(defaultFlag);
+    }
+  }, [defaultFlag, draftData]);
 
   const typeWriterEffect = (fullText: string) => {
     let index = 0;
@@ -270,19 +304,59 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
     }, Math.max(5, baseSpeed / lengthFactor)); // Minimum speed of 5ms, gets faster based on length
   };
   
-   
+  // Function to save current form state
+  const saveFormState = () => {
+    return {
+      notificationType,
+      title,
+      body,
+      flag,
+      policyId,
+      expirationDate,
+      type,
+      newsdetails,
+      insuredName,
+      claimantName,
+      taskType,
+      dueDate,
+      lineBusiness,
+      description,
+      selectedUsers
+    };
+  };
+
+  // Function to restore form state
+  const restoreFormState = (state: any) => {
+    setNotificationType(state.notificationType);
+    setTitle(state.title);
+    setBody(state.body);
+    setFlag(state.flag);
+    setPolicyId(state.policyId);
+    setExpirationDate(state.expirationDate);
+    setType(state.type);
+    setDetails(state.newsdetails);
+    setInsuredName(state.insuredName);
+    setClaimantName(state.claimantName);
+    setTaskType(state.taskType);
+    setDueDate(state.dueDate);
+    setLineBusiness(state.lineBusiness);
+    setDescription(state.description);
+    setSelectedUsers(state.selectedUsers);
+  };
 
   const handleSendMessage = async () => {
     if (copilotInput.trim() === "") return;
   
     try {
-      // 1. Show user's message immediately
+      // Save current form state before AI changes
+      setOriginalFormState(saveFormState());
+      
+      // Show user's message
       setCopilotMessages((prev) => [...prev, { role: "user", content: copilotInput }]);
   
-      const userInput = copilotInput; // Save it safely
-      setCopilotInput(""); // Clear input field
+      const userInput = copilotInput;
+      setCopilotInput("");
   
-      // 2. Send the message to Flask server
       const response = await fetch("http://localhost:5000/ai", {
         method: "POST",
         headers: {
@@ -296,23 +370,59 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
       if (response.ok) {
         const aiResponse = data.response;
   
-        // 3. Add AI's full response immediately
-        // setCopilotMessages((prev) => [...prev, { role: "assistant", content: aiResponse }]);
-        // 3. typerwriter
+        try {
+          const parsedResponse = JSON.parse(aiResponse);
+          setLastAIResponse(parsedResponse);
+          
+          // Apply AI suggestions to form
+          if (parsedResponse.notificationType) setNotificationType(parsedResponse.notificationType);
+          if (parsedResponse.title) setTitle(parsedResponse.title);
+          if (parsedResponse.body) setBody(parsedResponse.body);
+          if (parsedResponse.flag) setFlag(parsedResponse.flag);
+          if (parsedResponse.policyId) setPolicyId(parsedResponse.policyId);
+          if (parsedResponse.expirationDate) setExpirationDate(parsedResponse.expirationDate);
+          if (parsedResponse.type) setType(parsedResponse.type);
+          if (parsedResponse.newsdetails) setDetails(parsedResponse.newsdetails);
+          if (parsedResponse.insuredName) setInsuredName(parsedResponse.insuredName);
+          if (parsedResponse.claimantName) setClaimantName(parsedResponse.claimantName);
+          if (parsedResponse.taskType) setTaskType(parsedResponse.taskType);
+          if (parsedResponse.dueDate) setDueDate(parsedResponse.dueDate);
+          if (parsedResponse.lineBusiness) setLineBusiness(parsedResponse.lineBusiness);
+          if (parsedResponse.description) setDescription(parsedResponse.description);
+          if (parsedResponse.selectedUsers) setSelectedUsers(parsedResponse.selectedUsers);
+          
+          setIsAISuggested(true);
+          toast.success("AI suggestions applied to form. Review and accept or reject changes.");
+        } catch (parseError) {
+          console.log("Response is not in JSON format, showing as message");
         typeWriterEffect(aiResponse);
+        }
       } else {
         console.error("API error:", data.error);
-        alert("Failed to generate email.");
+        toast.error("Failed to generate notification content.");
       }
     } catch (error) {
       console.error("Network error:", error);
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
   
-  
-  
-  
+  const handleAcceptChanges = () => {
+    setIsAISuggested(false);
+    setLastAIResponse(null);
+    setOriginalFormState(null);
+    toast.success("Changes accepted!");
+  };
+
+  const handleRejectChanges = () => {
+    if (originalFormState) {
+      restoreFormState(originalFormState);
+    }
+    setIsAISuggested(false);
+    setLastAIResponse(null);
+    setOriginalFormState(null);
+    toast.success("Changes rejected and original form restored.");
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -333,16 +443,29 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
         </div>
 
         {/* Notification Type Selector */}
+        <div className="flex gap-4">
         <select
           value={notificationType}
           onChange={(e) => setNotificationType(e.target.value)}
-          className="p-2 rounded border border-gray-300 text-black w-full"
+            className="p-2 rounded border border-gray-300 text-black flex-1"
         >
           <option value="">Select Type</option>
           <option value="policy">Policy</option>
           <option value="news">News</option>
           <option value="claims">Claims</option>
         </select>
+
+          {/* Flag Selector */}
+          <select
+            value={flag}
+            onChange={(e) => setFlag(e.target.value)}
+            className="p-2 rounded border border-gray-300 text-black w-48"
+          >
+            <option value="normal">Normal</option>
+            <option value="important">Important</option>
+            <option value="info">Info</option>
+          </select>
+        </div>
 
         {/* User Selection */}
         <UserSelect
@@ -421,6 +544,22 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
             >
               Save Draft
             </button>
+            {isAISuggested && (
+              <>
+                <button 
+                  onClick={handleAcceptChanges}
+                  className="bg-green-500 text-white py-1 px-4 rounded-full hover:bg-green-600 transition-colors"
+                >
+                  ✓ Accept AI Changes
+                </button>
+                <button 
+                  onClick={handleRejectChanges}
+                  className="bg-red-500 text-white py-1 px-4 rounded-full hover:bg-red-600 transition-colors"
+                >
+                  ✕ Reject Changes
+                </button>
+              </>
+            )}
           </div> 
             <button 
             className="bg-dcpurple text-white py-1 px-4 rounded-full" 
@@ -428,7 +567,6 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
             >
               Copilot ✨
             </button>
-   
         </div>
       </div>
 
@@ -459,7 +597,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ onClose }) => {
 
           {typingMessage && (
             <div className="rounded-lg p-2 max-w-[80%] bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start">
-              {typingMessage}
+              <pre className="whitespace-pre-wrap">{typingMessage}</pre>
             </div>
           )}
         </div>
