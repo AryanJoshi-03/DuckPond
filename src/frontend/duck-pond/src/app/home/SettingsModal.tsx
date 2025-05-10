@@ -27,6 +27,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const router = useRouter();
 
+  // Add new state for preferences
+  const [autoSaveDrafts, setAutoSaveDrafts] = React.useState(false);
+  const [defaultFlag, setDefaultFlag] = React.useState("normal");
+
+  // Add useEffect to load preferences
+  React.useEffect(() => {
+    // Load preferences from localStorage
+    const savedAutoSave = localStorage.getItem("autoSaveDrafts");
+    const savedDefaultFlag = localStorage.getItem("defaultFlag");
+    
+    if (savedAutoSave) setAutoSaveDrafts(savedAutoSave === "true");
+    if (savedDefaultFlag) setDefaultFlag(savedDefaultFlag);
+  }, []);
+
+  // Add function to save preferences
+  const savePreferences = () => {
+    localStorage.setItem("autoSaveDrafts", autoSaveDrafts.toString());
+    localStorage.setItem("defaultFlag", defaultFlag);
+    setFeedbackMessage("Preferences saved successfully!");
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +166,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         );
       case "Preferences":
-        return <p className="text-zinc-300">User preferences go here.</p>;
+        return (
+          <div className="space-y-6">
+            <div className="bg-zinc-800 p-4 rounded-xl shadow">
+              <h3 className="text-lg font-semibold mb-4 text-white">Notification Preferences</h3>
+              
+              {/* Default Flag Selector */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Default Notification Flag
+                </label>
+                <select
+                  value={defaultFlag}
+                  onChange={(e) => setDefaultFlag(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-dcpurple"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="important">Important</option>
+                  <option value="info">Info</option>
+                </select>
+                <p className="text-sm text-zinc-400 mt-1">
+                  This flag will be pre-selected when creating new notifications
+                </p>
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={savePreferences}
+                className="mt-4 px-4 py-2 bg-dcpurple text-white rounded-md hover:bg-purple-700 transition"
+              >
+                Save Preferences
+              </button>
+
+              {feedbackMessage && (
+                <p className="mt-2 text-green-400 text-sm">{feedbackMessage}</p>
+              )}
+            </div>
+          </div>
+        );
       case "Accessibility":
         return <p className="text-zinc-300 italic">Accessibility settings coming soon.</p>;
       default:

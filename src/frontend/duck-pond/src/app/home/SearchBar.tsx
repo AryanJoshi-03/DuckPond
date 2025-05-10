@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { Search } from "lucide-react";
 
 interface SearchBarProps {
   query: string;
@@ -42,13 +43,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <div className="flex-1 px-6 pb-3">
       <div className="flex gap-1 items-center mx-auto w-full h-14 bg-gray-200 dark:bg-gray-800 rounded-3xl max-w-2/3">
+        <label htmlFor="search-input" className="sr-only">Search notifications</label>
         <input
+          id="search-input"
           type="text"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search Text"
           className="flex-1 text-base text-zinc-700 dark:text-zinc-300 bg-transparent border-none outline-none px-4"
+          aria-label="Search notifications"
         />
+        <button
+          type="button"
+          className="px-4"
+          aria-label="Search"
+        >
+          <Search className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
+        </button>
       </div>
     </div>
   );

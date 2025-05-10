@@ -37,9 +37,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           height={100}
         />
         <ComposeButton onClick={() => setShowModal(true)} />
-        <button className="h-10 text-sm font-medium text-white cursor-pointer bg-slate-500 dark:bg-slate-700 rounded-[100px] w-[137px] transition-colors duration-300 ease-in-out">
-          Configure Apps
-        </button>
 
         {/* Refined menu */}
         <div className="flex flex-col w-full items-start mt-2 px-2 gap-1">

@@ -14,6 +14,7 @@ interface NotificationCardProps {
   onClick?: () => void; // ✅ Optional click handler
   isSent?: boolean; // Add this prop to indicate if it's a sent notification
   recipients?: string[]; // Add this prop for the list of recipients
+  flag?: string; // Add flag prop
 }
 
 const getAppLogo = (appName: string) => {
@@ -95,6 +96,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   onClick,
   isSent = false, // Default to false
   recipients = [], // Default to empty array
+  flag = "normal", // Default to normal
 }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -118,6 +120,20 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     return `To: ${recipients[0]} +${recipients.length - 1} more`;
   };
 
+  // Get flag color based on flag type
+  const getFlagColor = (flag: string) => {
+    switch (flag.toLowerCase()) {
+      case "important":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      case "urgent":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      case "info":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+    }
+  };
+
   return (
     <div
       onClick={onClick}
@@ -133,9 +149,14 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
         {/* Left side: text info */}
         <div className="flex flex-col px-2 flex-1">
-          <span className={`text-sm ${isRead ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}>
-            {isSent ? formatRecipients() : `${sender} • ${department}`}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm ${isRead ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}>
+              {isSent ? formatRecipients() : `${sender} • ${department}`}
+            </span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${getFlagColor(flag)}`}>
+              {flag.charAt(0).toUpperCase() + flag.slice(1)}
+            </span>
+          </div>
           <span className={`text-base ${isRead ? "text-gray-500 dark:text-gray-400" : "text-gray-900 dark:text-gray-100 font-semibold"}`}>
             {subject}
           </span>

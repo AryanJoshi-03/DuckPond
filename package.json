@@ -9,7 +9,9 @@
     },
     "dependencies": {
         "@headlessui/react": "^2.2.2",
+        "date-fns": "^4.1.0",
         "jose": "^6.0.10",
+        "make": "^0.8.1",
         "next": "^13.5.11",
         "react": "18.2.0",
         "react-dom": "18.2.0",
